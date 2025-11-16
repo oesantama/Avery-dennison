@@ -7,13 +7,15 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import { entregasApi, operacionesApi } from '@/lib/api';
 import type { Entrega, VehiculoOperacion } from '@/types';
-import { FiPlus, FiCheckCircle, FiUpload, FiImage } from 'react-icons/fi';
+import { FiPlus, FiCheckCircle, FiUpload, FiImage, FiDownload } from 'react-icons/fi';
+import { useExportToExcel } from '@/hooks/useExportToExcel';
 
 export default function EntregasPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const vehiculoIdParam = searchParams?.get('vehiculo');
   const { user, loading: authLoading } = useAuth();
+  const { exportToExcel } = useExportToExcel();
   const [entregas, setEntregas] = useState<Entrega[]>([]);
   const [vehiculos, setVehiculos] = useState<VehiculoOperacion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +113,18 @@ export default function EntregasPage() {
     }
   };
 
+  const handleExportToExcel = () => {
+    const dataToExport = entregas.map((entrega) => ({
+      'N° Factura': entrega.numero_factura,
+      'Cliente': entrega.cliente || '-',
+      'Fecha Operación': new Date(entrega.fecha_operacion).toLocaleDateString(),
+      'Estado': entrega.estado,
+      'Fotos': entrega.fotos?.length || 0,
+      'Fecha Cumplido': entrega.fecha_cumplido ? new Date(entrega.fecha_cumplido).toLocaleDateString() : '-',
+    }));
+    exportToExcel(dataToExport, `entregas-${new Date().toISOString().split('T')[0]}`, 'Entregas');
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -123,21 +137,31 @@ export default function EntregasPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Entregas</h1>
-            <p className="mt-2 text-sm text-gray-700">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Entregas</h1>
+            <p className="mt-1 sm:mt-2 text-sm text-gray-700">
               Gestión de facturas y entregas por vehículo
             </p>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500"
-          >
-            <FiPlus className="mr-2 h-5 w-5" />
-            Nueva Entrega
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              onClick={handleExportToExcel}
+              disabled={entregas.length === 0}
+              className="inline-flex items-center justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FiDownload className="mr-2 h-5 w-5" />
+              Exportar a Excel
+            </button>
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="inline-flex items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500"
+            >
+              <FiPlus className="mr-2 h-5 w-5" />
+              Nueva Entrega
+            </button>
+          </div>
         </div>
 
         {/* Create Form */}
@@ -295,45 +319,107 @@ export default function EntregasPage() {
 
         {/* Entregas List */}
         <Card title="Lista de Entregas">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    N° Factura
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Cliente
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Fecha Operación
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Fotos
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+          {entregas.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No hay entregas registradas
+            </div>
+          ) : (
+            <>
+              {/* Vista de tabla para pantallas grandes */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        N° Factura
+                      </th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        Cliente
+                      </th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        Fecha
+                      </th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        Estado
+                      </th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        Fotos
+                      </th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {entregas.map((entrega) => (
+                      <tr key={entrega.id} className="hover:bg-gray-50">
+                        <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm font-medium text-gray-900">
+                          {entrega.numero_factura}
+                        </td>
+                        <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm text-gray-500">
+                          {entrega.cliente || '-'}
+                        </td>
+                        <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm text-gray-500">
+                          {new Date(entrega.fecha_operacion).toLocaleDateString()}
+                        </td>
+                        <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm">
+                          <span
+                            className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                              entrega.estado === 'cumplido'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}
+                          >
+                            {entrega.estado}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm text-gray-500">
+                          {entrega.fotos?.length || 0}
+                        </td>
+                        <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm font-medium">
+                          <div className="flex items-center gap-2">
+                            {entrega.estado === 'pendiente' && (
+                              <button
+                                onClick={() => handleCompleteEntrega(entrega.id)}
+                                className="text-green-600 hover:text-green-900 inline-flex items-center"
+                                title="Marcar como completado"
+                              >
+                                <FiCheckCircle className="h-4 w-4" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setSelectedEntrega(entrega)}
+                              className="text-primary-600 hover:text-primary-900 inline-flex items-center"
+                              title="Subir foto"
+                            >
+                              <FiUpload className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Vista de tarjetas para móviles */}
+              <div className="md:hidden space-y-4">
                 {entregas.map((entrega) => (
-                  <tr key={entrega.id}>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                      {entrega.numero_factura}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      {entrega.cliente || '-'}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      {new Date(entrega.fecha_operacion).toLocaleDateString()}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm">
+                  <div key={entrega.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          {entrega.numero_factura}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {entrega.cliente || 'Sin cliente'}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(entrega.fecha_operacion).toLocaleDateString()}
+                        </p>
+                      </div>
                       <span
-                        className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                        className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                           entrega.estado === 'cumplido'
                             ? 'bg-green-100 text-green-800'
                             : 'bg-yellow-100 text-yellow-800'
@@ -341,33 +427,34 @@ export default function EntregasPage() {
                       >
                         {entrega.estado}
                       </span>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      {entrega.fotos?.length || 0}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium space-x-2">
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                      <FiImage className="h-4 w-4" />
+                      <span>{entrega.fotos?.length || 0} fotos</span>
+                    </div>
+                    <div className="flex gap-2">
                       {entrega.estado === 'pendiente' && (
                         <button
                           onClick={() => handleCompleteEntrega(entrega.id)}
-                          className="text-green-600 hover:text-green-900 inline-flex items-center"
+                          className="flex-1 inline-flex items-center justify-center rounded-md bg-green-50 px-3 py-2 text-sm font-semibold text-green-600 hover:bg-green-100"
                         >
-                          <FiCheckCircle className="mr-1 h-4 w-4" />
+                          <FiCheckCircle className="mr-2 h-4 w-4" />
                           Completar
                         </button>
                       )}
                       <button
                         onClick={() => setSelectedEntrega(entrega)}
-                        className="text-primary-600 hover:text-primary-900 inline-flex items-center"
+                        className="flex-1 inline-flex items-center justify-center rounded-md bg-primary-50 px-3 py-2 text-sm font-semibold text-primary-600 hover:bg-primary-100"
                       >
-                        <FiUpload className="mr-1 h-4 w-4" />
-                        Foto
+                        <FiUpload className="mr-2 h-4 w-4" />
+                        Subir Foto
                       </button>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </>
+          )}
         </Card>
       </div>
     </DashboardLayout>
