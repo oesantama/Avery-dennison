@@ -1,8 +1,5 @@
 -- Schema para el sistema de gestión de vehículos y entregas
--- Creación de base de datos
-CREATE DATABASE IF NOT EXISTS vehiculos_operacion;
-
-\c vehiculos_operacion;
+-- La base de datos ya se crea con la variable POSTGRES_DB en docker-compose
 
 -- Tabla de usuarios para autenticación
 CREATE TABLE IF NOT EXISTS usuarios (
