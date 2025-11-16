@@ -1,0 +1,26 @@
+# Git
+.git
+.gitignore
+
+# Dependencias
+**/node_modules
+**/__pycache__
+**/venv
+**/env
+
+# Build
+**/.next
+**/build
+**/dist
+
+# Desarrollo
+.vscode
+.idea
+**/.env*.local
+**/README.md
+
+# Logs
+**/*.log
+
+# Misc
+.DS_Store

@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: vehiculos-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_DB: vehiculos_operacion
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - vehiculos-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend FastAPI
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vehiculos-backend
+    ports:
+      - "3035:3035"
+    environment:
+      DATABASE_URL: postgresql://postgres:yourpassword@db:5432/vehiculos_operacion
+      SECRET_KEY: your-secret-key-here-change-in-production
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      UPLOAD_DIR: uploads
+    volumes:
+      - ./backend:/app
+      - backend_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - vehiculos-network
+    command: uvicorn main:app --host 0.0.0.0 --port 3035 --reload
+
+  # Frontend Next.js
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vehiculos-frontend
+    ports:
+      - "8035:8035"
+    environment:
+      - API_URL=http://backend:3035
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    networks:
+      - vehiculos-network
+
+networks:
+  vehiculos-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  backend_uploads:
