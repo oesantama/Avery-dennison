@@ -55,7 +55,7 @@ services:
     ports:
       - "8035:8035"
     environment:
-      - API_URL=http://backend:3035
+      - NEXT_PUBLIC_API_URL=http://localhost:3035
       - NODE_ENV=production
     depends_on:
       - backend
