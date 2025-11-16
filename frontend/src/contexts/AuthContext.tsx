@@ -16,20 +16,22 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Usuario | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
-    // Verificar si estamos en el cliente antes de acceder a localStorage
+    // Solo ejecutar en el cliente
     if (typeof window === 'undefined') {
-      setLoading(false);
       return;
     }
 
+    setLoading(true);
     const token = localStorage.getItem('token');
     if (token) {
       try {
@@ -63,6 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     router.push('/login');
   };
+
+  // Evitar errores de hidratación renderizando el mismo contenido en servidor y cliente
+  if (!mounted) {
+    return (
+      <AuthContext.Provider value={{ user: null, loading: false, login, logout }}>
+        {children}
+      </AuthContext.Provider>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>
