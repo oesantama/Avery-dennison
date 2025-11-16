@@ -24,6 +24,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const checkAuth = async () => {
+    // Verificar si estamos en el cliente antes de acceder a localStorage
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
+
     const token = localStorage.getItem('token');
     if (token) {
       try {
@@ -39,7 +45,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (credentials: LoginCredentials) => {
     try {
       const authToken = await authApi.login(credentials);
-      localStorage.setItem('token', authToken.access_token);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', authToken.access_token);
+      }
       const userData = await authApi.me();
       setUser(userData);
       router.push('/dashboard');
@@ -49,7 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+    }
     setUser(null);
     router.push('/login');
   };
