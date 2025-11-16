@@ -46,19 +46,17 @@ services:
       - vehiculos-network
     command: uvicorn main:app --host 0.0.0.0 --port 3035 --reload
 
-  # Frontend Next.js
+  # Frontend Next.js - Modo Desarrollo
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: http://localhost:3035
+      dockerfile: Dockerfile.dev
     container_name: vehiculos-frontend
     ports:
       - "8035:8035"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:3035
-      - NODE_ENV=production
+      - NODE_ENV=development
     volumes:
       - ./frontend:/app
       - /app/node_modules
