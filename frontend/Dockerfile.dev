@@ -1,4 +1,4 @@
-# Frontend Dockerfile - Next.js Development
+# Frontend Dockerfile para desarrollo - Next.js
 FROM node:18-alpine
 
 WORKDIR /app
@@ -7,14 +7,13 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Copiar el resto del código
+# Copiar archivos del proyecto
 COPY . .
-
-# Variables de entorno
-ENV NEXT_PUBLIC_API_URL=http://localhost:3035
-ENV NODE_ENV=development
 
 EXPOSE 8035
 
-# Ejecutar en modo desarrollo con hot reload
-CMD ["npm", "run", "dev", "--", "-p", "8035"]
+ENV PORT 8035
+ENV HOSTNAME "0.0.0.0"
+
+# Modo desarrollo con hot-reload
+CMD ["npm", "run", "dev", "--", "-p", "8035", "-H", "0.0.0.0"]
