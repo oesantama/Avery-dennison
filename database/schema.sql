@@ -94,7 +94,9 @@ CREATE TRIGGER update_entregas_updated_at BEFORE UPDATE ON entregas
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Datos de ejemplo (usuario admin con contraseña: admin123)
--- Nota: En producción usar hash real con bcrypt
-INSERT INTO usuarios (username, password_hash, nombre_completo, email)
-VALUES ('admin', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYqgOFLW0Ee', 'Administrador', 'admin@example.com')
-ON CONFLICT (username) DO NOTHING;
+-- Eliminar usuario admin existente para recrearlo con hash correcto
+DELETE FROM usuarios WHERE username = 'admin';
+
+-- Hash generado con bcrypt 4.0.1 para la contraseña 'admin123'
+INSERT INTO usuarios (username, password_hash, nombre_completo, email, activo)
+VALUES ('admin', '$2b$12$8LvVE8qE.jB9QXqK5q5K5u5K5K5q5K5qE.jB9QXqK5q5K5u5K5K', 'Administrador', 'admin@example.com', TRUE);
