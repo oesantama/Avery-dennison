@@ -3,6 +3,9 @@ import type {
   AuthToken,
   LoginCredentials,
   Usuario,
+  UsuarioCreate,
+  UsuarioUpdate,
+  UsuarioConRol,
   OperacionDiaria,
   OperacionDiariaCreate,
   VehiculoOperacion,
@@ -13,6 +16,15 @@ import type {
   TipoVehiculo,
   TipoVehiculoCreate,
   TipoVehiculoUpdate,
+  Rol,
+  RolCreate,
+  RolUpdate,
+  Page,
+  PageCreate,
+  PageUpdate,
+  PermisoRol,
+  PermisoRolCreate,
+  PermisoRolUpdate,
   Entrega,
   EntregaCreate,
   EntregaUpdate,
@@ -175,6 +187,132 @@ export const tiposVehiculoApi = {
 
   delete: async (id: number): Promise<void> => {
     await api.delete(`/api/maestros/tipos-vehiculo/${id}`);
+  },
+};
+
+// Usuarios APIs
+export const usuariosApi = {
+  create: async (data: UsuarioCreate): Promise<Usuario> => {
+    const response = await api.post<Usuario>('/api/usuarios', data);
+    return response.data;
+  },
+
+  list: async (params?: {
+    skip?: number;
+    limit?: number;
+    activo?: boolean;
+  }): Promise<UsuarioConRol[]> => {
+    const response = await api.get<UsuarioConRol[]>('/api/usuarios', { params });
+    return response.data;
+  },
+
+  get: async (id: number): Promise<UsuarioConRol> => {
+    const response = await api.get<UsuarioConRol>(`/api/usuarios/${id}`);
+    return response.data;
+  },
+
+  update: async (id: number, data: UsuarioUpdate): Promise<Usuario> => {
+    const response = await api.put<Usuario>(`/api/usuarios/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/usuarios/${id}`);
+  },
+};
+
+// Roles APIs
+export const rolesApi = {
+  create: async (data: RolCreate): Promise<Rol> => {
+    const response = await api.post<Rol>('/api/roles', data);
+    return response.data;
+  },
+
+  list: async (params?: {
+    skip?: number;
+    limit?: number;
+    activo?: boolean;
+  }): Promise<Rol[]> => {
+    const response = await api.get<Rol[]>('/api/roles', { params });
+    return response.data;
+  },
+
+  get: async (id: number): Promise<Rol> => {
+    const response = await api.get<Rol>(`/api/roles/${id}`);
+    return response.data;
+  },
+
+  update: async (id: number, data: RolUpdate): Promise<Rol> => {
+    const response = await api.put<Rol>(`/api/roles/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/roles/${id}`);
+  },
+};
+
+// Pages APIs
+export const pagesApi = {
+  create: async (data: PageCreate): Promise<Page> => {
+    const response = await api.post<Page>('/api/pages', data);
+    return response.data;
+  },
+
+  list: async (params?: {
+    skip?: number;
+    limit?: number;
+    activo?: boolean;
+  }): Promise<Page[]> => {
+    const response = await api.get<Page[]>('/api/pages', { params });
+    return response.data;
+  },
+
+  get: async (id: number): Promise<Page> => {
+    const response = await api.get<Page>(`/api/pages/${id}`);
+    return response.data;
+  },
+
+  update: async (id: number, data: PageUpdate): Promise<Page> => {
+    const response = await api.put<Page>(`/api/pages/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/pages/${id}`);
+  },
+};
+
+// Permisos por Rol APIs
+export const permisosRolApi = {
+  create: async (data: PermisoRolCreate): Promise<PermisoRol> => {
+    const response = await api.post<PermisoRol>('/api/maestros/permisos-rol/', data);
+    return response.data;
+  },
+
+  list: async (params?: {
+    skip?: number;
+    limit?: number;
+    rol_id?: number;
+    page_id?: number;
+    estado?: string;
+  }): Promise<PermisoRol[]> => {
+    const response = await api.get<PermisoRol[]>('/api/maestros/permisos-rol/', { params });
+    return response.data;
+  },
+
+  get: async (id: number): Promise<PermisoRol> => {
+    const response = await api.get<PermisoRol>(`/api/maestros/permisos-rol/${id}`);
+    return response.data;
+  },
+
+  update: async (id: number, data: PermisoRolUpdate): Promise<PermisoRol> => {
+    const response = await api.put<PermisoRol>(`/api/maestros/permisos-rol/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/maestros/permisos-rol/${id}`);
   },
 };
 

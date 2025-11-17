@@ -2,9 +2,37 @@ export interface Usuario {
   id: number;
   username: string;
   nombre_completo?: string;
-  email?: string;
+  email: string;
+  numero_celular?: string;
+  rol_id: number;
   activo: boolean;
-  created_at: string;
+  creado_por?: number;
+  fecha_creacion: string;
+  fecha_actualizacion: string;
+}
+
+export interface UsuarioCreate {
+  username: string;
+  nombre_completo?: string;
+  email: string;
+  numero_celular?: string;
+  rol_id: number;
+  activo?: boolean;
+  password: string;
+}
+
+export interface UsuarioUpdate {
+  username?: string;
+  nombre_completo?: string;
+  email?: string;
+  numero_celular?: string;
+  rol_id?: number;
+  activo?: boolean;
+  password?: string;
+}
+
+export interface UsuarioConRol extends Usuario {
+  rol?: Rol;
 }
 
 export interface LoginCredentials {
@@ -165,6 +193,57 @@ export interface TipoVehiculoCreate {
 export interface TipoVehiculoUpdate {
   descripcion?: string;
   estado?: 'activo' | 'inactivo';
+}
+
+// Roles
+export interface Rol {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  activo: boolean;
+  fecha_creacion: string;
+}
+
+export interface RolCreate {
+  nombre: string;
+  descripcion?: string;
+  activo?: boolean;
+}
+
+export interface RolUpdate {
+  nombre?: string;
+  descripcion?: string;
+  activo?: boolean;
+}
+
+// Pages
+export interface Page {
+  id: number;
+  nombre: string;
+  nombre_display: string;
+  ruta: string;
+  icono?: string;
+  orden: number;
+  activo: boolean;
+  fecha_creacion: string;
+}
+
+export interface PageCreate {
+  nombre: string;
+  nombre_display: string;
+  ruta: string;
+  icono?: string;
+  orden?: number;
+  activo?: boolean;
+}
+
+export interface PageUpdate {
+  nombre?: string;
+  nombre_display?: string;
+  ruta?: string;
+  icono?: string;
+  orden?: number;
+  activo?: boolean;
 }
 
 // Permisos por Rol
