@@ -8,6 +8,7 @@ from app.models.usuario import Usuario
 from app.models.operacion import OperacionDiaria, VehiculoOperacion
 from app.models.entrega import Entrega
 from app.schemas.operacion import (
+    OperacionDiariaUpdate,
     OperacionDiariaCreate,
     OperacionDiariaResponse,
     OperacionDiariaWithStats,
@@ -128,3 +129,61 @@ async def listar_vehiculos_operacion(
         VehiculoOperacion.operacion_id == operacion_id
     ).all()
     return vehiculos
+
+@router.put("/{operacion_id}", response_model=OperacionDiariaResponse)
+async def actualizar_operacion(
+    operacion_id: int,
+    operacion_data: OperacionDiariaUpdate,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    """
+    Actualizar una operación diaria existente
+    """
+    operacion = db.query(OperacionDiaria).filter(OperacionDiaria.id == operacion_id).first()
+    if not operacion:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Operación no encontrada"
+        )
+
+    # Actualizar solo los campos proporcionados
+    for field, value in operacion_data.model_dump(exclude_unset=True).items():
+        setattr(operacion, field, value)
+
+    db.commit()
+    db.refresh(operacion)
+    return operacion
+
+
+@router.delete("/{operacion_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def eliminar_operacion(
+    operacion_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    """
+    Eliminar una operación diaria y todos sus vehículos asociados
+    """
+    operacion = db.query(OperacionDiaria).filter(OperacionDiaria.id == operacion_id).first()
+    if not operacion:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Operación no encontrada"
+        )
+
+    # Verificar si hay entregas asociadas
+    entregas_count = db.query(func.count(Entrega.id)).join(VehiculoOperacion).filter(
+        VehiculoOperacion.operacion_id == operacion_id
+    ).scalar()
+
+    if entregas_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No se puede eliminar la operación porque tiene {entregas_count} entregas asociadas"
+        )
+
+    # Eliminar operación (en cascada eliminará vehículos de operación)
+    db.delete(operacion)
+    db.commit()
+    return None

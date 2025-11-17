@@ -5,6 +5,7 @@ import type {
   Usuario,
   OperacionDiaria,
   OperacionDiariaCreate,
+  OperacionDiariaUpdate,
   VehiculoOperacion,
   VehiculoOperacionCreate,
   Vehiculo,

@@ -33,6 +33,12 @@ export interface OperacionDiariaCreate {
   observacion?: string;
 }
 
+export interface OperacionDiariaUpdate {
+  fecha_operacion?: string;
+  cantidad_vehiculos_solicitados?: number;
+  observacion?: string;
+}
+
 export interface VehiculoOperacion {
   id: number;
   operacion_id: number;

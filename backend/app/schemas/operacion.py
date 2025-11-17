@@ -27,6 +27,12 @@ class OperacionDiariaBase(BaseModel):
 class OperacionDiariaCreate(OperacionDiariaBase):
     pass
 
+
+class OperacionDiariaUpdate(BaseModel):
+    fecha_operacion: Optional[date] = None
+    cantidad_vehiculos_solicitados: Optional[int] = None
+    observacion: Optional[str] = None
+
 class OperacionDiariaResponse(OperacionDiariaBase):
     id: int
     usuario_id: Optional[int] = None
