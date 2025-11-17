@@ -37,8 +37,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const userData = await authApi.me();
         setUser(userData);
-      } catch (error) {
-        localStorage.removeItem('token');
+      } catch (error: any) {
+        // Solo eliminar el token si es un error de autenticación (401)
+        // No eliminar por errores de red u otros problemas temporales
+        if (error?.response?.status === 401) {
+          console.log('Token inválido o expirado, cerrando sesión');
+          localStorage.removeItem('token');
+          setUser(null);
+        } else {
+          // Para otros errores, mantener el token y reintentar más tarde
+          console.warn('Error verificando autenticación (se mantendrá la sesión):', error?.message);
+        }
       }
     }
     setLoading(false);
@@ -58,12 +67,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
+  const logout = async () => {
+    try {
+      // Llamar al endpoint de logout del backend
+      await authApi.logout();
+    } catch (error) {
+      // Continuar con logout local aunque falle el backend
+      console.warn('Error en logout:', error);
+    } finally {
+      // Siempre limpiar el estado local
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
+      setUser(null);
+      router.push('/login');
     }
-    setUser(null);
-    router.push('/login');
   };
 
   // Evitar errores de hidratación renderizando el mismo contenido en servidor y cliente

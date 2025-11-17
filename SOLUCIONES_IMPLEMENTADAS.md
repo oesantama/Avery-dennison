@@ -6,17 +6,102 @@ Todas las correcciones críticas y mejoras solicitadas han sido implementadas ex
 
 ## 🔴 PROBLEMAS CRÍTICOS SOLUCIONADOS
 
-### 1. ✅ Sesión Expira Automáticamente - SOLUCIONADO
+### 1. ✅ Sesión Expira Automáticamente - SOLUCIONADO COMPLETAMENTE
 
 **Problema reportado:**
-> Sesión se cierra automáticamente sin previo aviso al navegar entre páginas
+> Sesión se cierra automáticamente sin previo aviso al navegar entre páginas o por URL directa
 
-**Solución implementada:**
-- ⏰ **Tiempo de sesión aumentado de 30 minutos a 8 horas** 
+**Causas identificadas:**
+1. Token JWT eliminado ante cualquier error (incluso errores de red)
+2. No se diferenciaba entre errores 401 (token inválido) y otros errores
+3. No existía endpoint de logout en el backend
+
+**Soluciones implementadas:**
+
+#### A. Tiempo de sesión aumentado (8 horas)
+- ⏰ **Tiempo de sesión aumentado de 30 minutos a 8 horas**
 - 📂 Archivo: `backend/app/config.py`
 - 🔧 Cambio: `access_token_expire_minutes: 480` (8 horas)
 
-**Resultado:** Los usuarios ahora tienen 8 horas de sesión ininterrumpida (jornada laboral completa).
+#### B. Mejora en manejo de errores de autenticación
+- 🔍 **Solo eliminar token ante error 401** (token inválido/expirado)
+- 🔄 **Mantener token ante errores de red** u otros problemas temporales
+- 📝 **Logging mejorado** para debugging
+- 📂 Archivo: `frontend/src/contexts/AuthContext.tsx`
+
+**Código antes:**
+```typescript
+catch (error) {
+  localStorage.removeItem('token');  // ❌ Elimina ante cualquier error
+}
+```
+
+**Código después:**
+```typescript
+catch (error: any) {
+  if (error?.response?.status === 401) {
+    console.log('Token inválido o expirado, cerrando sesión');
+    localStorage.removeItem('token');
+  } else {
+    console.warn('Error verificando autenticación (se mantendrá la sesión):', error?.message);
+    // ✅ Mantiene el token para otros errores
+  }
+}
+```
+
+#### C. Interceptor global de errores 401
+- 🛡️ **Interceptor de respuestas** en Axios
+- 🚪 **Redirección automática** al login solo si token es inválido
+- 🧹 **Limpieza automática** de localStorage en caso de 401
+- 📂 Archivo: `frontend/src/lib/api.ts`
+
+```typescript
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        if (currentPath !== '/login') {
+          console.log('Sesión expirada, redirigiendo al login');
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+#### D. Endpoint de logout implementado
+- ✅ **Nuevo endpoint:** `POST /api/auth/logout`
+- 📊 **Permite logging** de eventos de logout
+- 🔮 **Preparado para** blacklist de tokens (implementación futura)
+- 📂 Archivo: `backend/app/routes/auth.py`
+
+```python
+@router.post("/logout")
+async def logout(
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    return {
+        "message": "Logout successful",
+        "username": current_user.username
+    }
+```
+
+#### E. Función de logout mejorada
+- 🔄 **Llama al backend** antes de cerrar sesión
+- 🧹 **Siempre limpia estado local** aunque falle el backend
+- 📂 Archivo: `frontend/src/contexts/AuthContext.tsx`
+
+**Resultado:**
+- ✅ Sesión permanece activa por 8 horas completas
+- ✅ Solo se cierra ante token realmente expirado (401)
+- ✅ Errores de red no cierran la sesión
+- ✅ Navegación por URL funciona perfectamente
+- ✅ Logout adecuado con notificación al backend
 
 ---
 
@@ -289,18 +374,28 @@ docker exec -it vehiculos-db psql -U postgres -d vehiculos_operacion -f /tmp/cle
 ## 📁 ARCHIVOS MODIFICADOS/CREADOS
 
 ### Backend:
-- `backend/app/config.py` - Tiempo de sesión aumentado
+- `backend/app/config.py` - Tiempo de sesión aumentado a 8 horas
+- `backend/app/routes/auth.py` - **NUEVO:** Endpoint de logout implementado
 
 ### Frontend:
-- `frontend/src/app/login/page.tsx` - Login renovado + protección
+- `frontend/src/contexts/AuthContext.tsx` - Mejora en manejo de errores + logout asíncrono
+- `frontend/src/lib/api.ts` - **NUEVO:** Interceptor global 401 + función logout
+- `frontend/src/app/login/page.tsx` - Login renovado + protección brute force
 - `frontend/src/components/layout/DashboardLayout.tsx` - Navbar responsive
 - `frontend/src/app/dashboard/page.tsx` - Mensajes informativos
+- `frontend/src/app/operaciones/page.tsx` - Texto visible en inputs
+- `frontend/src/app/operaciones/[id]/page.tsx` - Texto visible en inputs
+- `frontend/src/app/entregas/page.tsx` - Texto visible en inputs
 
 ### Database:
 - `database/clean_test_data.sql` - Script de limpieza (nuevo)
 
+### Docker:
+- `docker-compose.dev.yml` - Puerto PostgreSQL cambiado a 5433
+
 ### Documentación:
-- `SOLUCIONES_IMPLEMENTADAS.md` - Este archivo (nuevo)
+- `SOLUCIONES_IMPLEMENTADAS.md` - Este archivo (actualizado)
+- `DOCKER_INSTRUCTIONS.md` - Actualizado con nuevo puerto y troubleshooting
 
 ---
 

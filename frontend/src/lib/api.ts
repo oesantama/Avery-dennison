@@ -31,6 +31,26 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Handle response errors globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Si es un error 401, el token es inválido o expiró
+    if (error?.response?.status === 401) {
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        // Solo redirigir si no estamos ya en login
+        if (currentPath !== '/login') {
+          console.log('Sesión expirada, redirigiendo al login');
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth APIs
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<AuthToken> => {
@@ -44,6 +64,15 @@ export const authApi = {
   me: async (): Promise<Usuario> => {
     const response = await api.get<Usuario>('/api/auth/me');
     return response.data;
+  },
+
+  logout: async (): Promise<void> => {
+    try {
+      await api.post('/api/auth/logout');
+    } catch (error) {
+      // Ignorar errores de logout (el token se eliminará de todas formas)
+      console.warn('Error en logout del backend:', error);
+    }
   },
 };
 

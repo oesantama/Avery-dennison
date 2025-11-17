@@ -65,3 +65,19 @@ async def read_users_me(
     current_user: Usuario = Depends(get_current_active_user)
 ):
     return current_user
+
+@router.post("/logout")
+async def logout(
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    """
+    Endpoint de logout. Aunque JWT es stateless y no podemos invalidar el token
+    en el servidor, este endpoint existe para:
+    1. Mantener consistencia en la API
+    2. Permitir logging de eventos de logout
+    3. Posible implementación futura de blacklist de tokens
+    """
+    return {
+        "message": "Logout successful",
+        "username": current_user.username
+    }
