@@ -17,7 +17,7 @@ docker-compose -f docker-compose.dev.yml up --build
 - ✅ Logs detallados en consola
 - ✅ Frontend en: http://localhost:8035
 - ✅ Backend en: http://localhost:3035
-- ✅ Base de datos PostgreSQL en: localhost:5432
+- ✅ Base de datos PostgreSQL en: localhost:5433
 
 ### Para detener:
 ```bash
@@ -107,6 +107,23 @@ docker-compose -f docker-compose.dev.yml up --build
 docker-compose down
 docker-compose -f docker-compose.dev.yml down
 ```
+
+### Error: "Bind for 0.0.0.0:5432 failed: port is already allocated"
+**Causa:** Tienes PostgreSQL instalado localmente en tu PC usando el puerto 5432.
+
+**Solución:** El proyecto ya está configurado para usar el puerto 5433 en lugar de 5432 para evitar conflictos. Si aún así tienes problemas:
+
+1. Verifica qué está usando el puerto (en PowerShell de Windows):
+   ```powershell
+   netstat -ano | findstr :5432
+   netstat -ano | findstr :5433
+   ```
+
+2. Si el puerto 5433 también está ocupado, puedes cambiar el puerto en `docker-compose.dev.yml`:
+   ```yaml
+   ports:
+     - "5434:5432"  # Cambia 5433 por otro puerto disponible
+   ```
 
 ### Cambios no se reflejan
 **Solución:** Reconstruye el contenedor:
