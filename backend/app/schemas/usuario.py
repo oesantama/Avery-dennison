@@ -17,7 +17,7 @@ class UsuarioLogin(BaseModel):
 class UsuarioResponse(UsuarioBase):
     id: int
     activo: bool
-    created_at: datetime
+    fecha_creacion: datetime
 
     class Config:
         from_attributes = True
