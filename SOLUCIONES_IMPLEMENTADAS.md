@@ -15,6 +15,7 @@ Todas las correcciones críticas y mejoras solicitadas han sido implementadas ex
 1. Token JWT eliminado ante cualquier error (incluso errores de red)
 2. No se diferenciaba entre errores 401 (token inválido) y otros errores
 3. No existía endpoint de logout en el backend
+4. **CRÍTICO:** Estado `loading` iniciaba en `false`, causando redirecciones prematuras
 
 **Soluciones implementadas:**
 
@@ -96,11 +97,41 @@ async def logout(
 - 🧹 **Siempre limpia estado local** aunque falle el backend
 - 📂 Archivo: `frontend/src/contexts/AuthContext.tsx`
 
-**Resultado:**
+#### F. ⚡ FIX CRÍTICO: Estado loading inicial corregido
+**Problema más crítico identificado:**
+- Estado `loading` iniciaba en `false`, causando que páginas verificaran autenticación ANTES de que `checkAuth()` terminara
+- Resultado: Sesión válida se cerraba al navegar directamente por URL
+
+**Antes (INCORRECTO):**
+```typescript
+const [loading, setLoading] = useState(false); // ❌
+if (!mounted) {
+  return <Provider value={{ loading: false }}>  // ❌
+}
+```
+
+**Después (CORRECTO):**
+```typescript
+const [loading, setLoading] = useState(true);  // ✅ Evita redirecciones prematuras
+if (!mounted) {
+  return <Provider value={{ loading: true }}>  // ✅ Espera hasta verificar
+}
+```
+
+**Flujo corregido:**
+1. Usuario escribe URL directa → Página se monta
+2. AuthContext tiene `loading: true` → Página ESPERA
+3. `checkAuth()` verifica token → Establece `user` y `loading: false`
+4. Página verifica `user` → Muestra contenido o redirige correctamente
+
+**Documentación completa:** Ver `FIX_NAVEGACION_URL.md`
+
+**Resultado Final:**
 - ✅ Sesión permanece activa por 8 horas completas
 - ✅ Solo se cierra ante token realmente expirado (401)
 - ✅ Errores de red no cierran la sesión
-- ✅ Navegación por URL funciona perfectamente
+- ✅ **Navegación directa por URL funciona perfectamente** 🎯
+- ✅ Navegación por menú funciona perfectamente
 - ✅ Logout adecuado con notificación al backend
 
 ---
@@ -396,6 +427,7 @@ docker exec -it vehiculos-db psql -U postgres -d vehiculos_operacion -f /tmp/cle
 ### Documentación:
 - `SOLUCIONES_IMPLEMENTADAS.md` - Este archivo (actualizado)
 - `DOCKER_INSTRUCTIONS.md` - Actualizado con nuevo puerto y troubleshooting
+- `FIX_NAVEGACION_URL.md` - **NUEVO:** Documentación detallada del fix de navegación por URL
 
 ---
 
