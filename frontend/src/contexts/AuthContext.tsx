@@ -16,7 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Usuario | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // ✅ Iniciar en true para evitar redirecciones prematuras
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
@@ -37,9 +37,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const userData = await authApi.me();
         setUser(userData);
-      } catch (error) {
-        localStorage.removeItem('token');
+      } catch (error: any) {
+        // Solo eliminar el token si es un error de autenticación (401)
+        // No eliminar por errores de red u otros problemas temporales
+        if (error?.response?.status === 401) {
+          console.log('Token inválido o expirado, cerrando sesión');
+          localStorage.removeItem('token');
+          setUser(null);
+        } else {
+          // Para otros errores (red, servidor caído, etc), mantener el token
+          // y permitir que la UI intente usar las funcionalidades
+          console.warn('Error verificando autenticación (se mantendrá la sesión):', error?.message);
+          // No establecemos user=null para que la UI no redirija a login
+          // El interceptor de axios manejará errores 401 en futuras peticiones
+        }
       }
+    } else {
+      // Si no hay token, asegurar que user sea null
+      setUser(null);
     }
     setLoading(false);
   };
@@ -58,18 +73,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
+  const logout = async () => {
+    try {
+      // Llamar al endpoint de logout del backend
+      await authApi.logout();
+    } catch (error) {
+      // Continuar con logout local aunque falle el backend
+      console.warn('Error en logout:', error);
+    } finally {
+      // Siempre limpiar el estado local
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
+      setUser(null);
+      router.push('/login');
     }
-    setUser(null);
-    router.push('/login');
   };
 
   // Evitar errores de hidratación renderizando el mismo contenido en servidor y cliente
   if (!mounted) {
     return (
-      <AuthContext.Provider value={{ user: null, loading: false, login, logout }}>
+      <AuthContext.Provider value={{ user: null, loading: true, login, logout }}>
         {children}
       </AuthContext.Provider>
     );

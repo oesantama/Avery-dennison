@@ -98,5 +98,6 @@ CREATE TRIGGER update_entregas_updated_at BEFORE UPDATE ON entregas
 DELETE FROM usuarios WHERE username = 'admin';
 
 -- Hash generado con bcrypt 4.0.1 para la contraseña 'admin123'
+-- Credenciales: username: admin, password: admin123
 INSERT INTO usuarios (username, password_hash, nombre_completo, email, activo)
-VALUES ('admin', '$2b$12$8LvVE8qE.jB9QXqK5q5K5u5K5K5q5K5qE.jB9QXqK5q5K5u5K5K', 'Administrador', 'admin@example.com', TRUE);
+VALUES ('admin', '$2b$12$u3tRVni5FerUJ9c7NW3pau84O/kuFppCBuk/sZyP9gx0yJTfpO.Jq', 'Administrador', 'admin@example.com', TRUE);

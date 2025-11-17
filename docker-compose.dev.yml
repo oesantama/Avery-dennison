@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: yourpassword
       POSTGRES_DB: vehiculos_operacion
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
@@ -46,7 +46,7 @@ services:
       - vehiculos-network
     command: uvicorn main:app --host 0.0.0.0 --port 3035 --reload
 
-  # Frontend Next.js - Modo Desarrollo
+  # Frontend Next.js (Modo Desarrollo)
   frontend:
     build:
       context: ./frontend
