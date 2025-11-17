@@ -16,7 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Usuario | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // ✅ Iniciar en true para evitar redirecciones prematuras
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
@@ -45,10 +45,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem('token');
           setUser(null);
         } else {
-          // Para otros errores, mantener el token y reintentar más tarde
+          // Para otros errores (red, servidor caído, etc), mantener el token
+          // y permitir que la UI intente usar las funcionalidades
           console.warn('Error verificando autenticación (se mantendrá la sesión):', error?.message);
+          // No establecemos user=null para que la UI no redirija a login
+          // El interceptor de axios manejará errores 401 en futuras peticiones
         }
       }
+    } else {
+      // Si no hay token, asegurar que user sea null
+      setUser(null);
     }
     setLoading(false);
   };
@@ -87,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Evitar errores de hidratación renderizando el mismo contenido en servidor y cliente
   if (!mounted) {
     return (
-      <AuthContext.Provider value={{ user: null, loading: false, login, logout }}>
+      <AuthContext.Provider value={{ user: null, loading: true, login, logout }}>
         {children}
       </AuthContext.Provider>
     );
