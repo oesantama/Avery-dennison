@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
+import DataTable, { Column } from '@/components/ui/DataTable';
 import { rolesApi } from '@/lib/api';
 import type { Rol, RolCreate } from '@/types';
-import { FiPlus, FiEdit2, FiTrash2, FiShield } from 'react-icons/fi';
+import { FiPlus, FiShield } from 'react-icons/fi';
 
 export default function RolesPage() {
   const router = useRouter();
@@ -100,6 +101,35 @@ export default function RolesPage() {
   const getActivoLabel = (activo: boolean) => {
     return activo ? 'Activo' : 'Inactivo';
   };
+
+  // Definir columnas de la tabla
+  const columns: Column<Rol>[] = [
+    {
+      key: 'nombre',
+      label: 'Nombre',
+      sortable: true,
+    },
+    {
+      key: 'descripcion',
+      label: 'Descripción',
+      sortable: true,
+      render: (rol) => rol.descripcion || '-',
+    },
+    {
+      key: 'activo',
+      label: 'Estado',
+      sortable: true,
+      render: (rol) => (
+        <span
+          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getActivoBadge(
+            rol.activo
+          )}`}
+        >
+          {getActivoLabel(rol.activo)}
+        </span>
+      ),
+    },
+  ];
 
   if (authLoading || loading) {
     return (
@@ -211,73 +241,15 @@ export default function RolesPage() {
 
         {/* Roles List */}
         <Card title="Lista de Roles">
-          {roles.length === 0 ? (
-            <div className="text-center py-12">
-              <FiShield className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No hay roles registrados
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Comience agregando roles al sistema.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Nombre
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Descripción
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Estado
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {roles.map((rol) => (
-                    <tr key={rol.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                        {rol.nombre}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {rol.descripcion || '-'}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm">
-                        <span
-                          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getActivoBadge(
-                            rol.activo
-                          )}`}
-                        >
-                          {getActivoLabel(rol.activo)}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium space-x-3">
-                        <button
-                          onClick={() => handleEdit(rol)}
-                          className="text-primary-600 hover:text-primary-900 inline-flex items-center"
-                        >
-                          <FiEdit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(rol.id)}
-                          className="text-red-600 hover:text-red-900 inline-flex items-center"
-                        >
-                          <FiTrash2 className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <DataTable
+            data={roles}
+            columns={columns}
+            onEdit={handleEdit}
+            onDelete={(rol) => handleDelete(rol.id)}
+            emptyMessage="No hay roles registrados"
+            emptyIcon={<FiShield className="mx-auto h-12 w-12 text-gray-400" />}
+            searchPlaceholder="Buscar rol..."
+          />
         </Card>
       </div>
     </DashboardLayout>

@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
+import DataTable, { Column } from '@/components/ui/DataTable';
 import { vehiculosApi, tiposVehiculoApi } from '@/lib/api';
 import type { Vehiculo, VehiculoCreate, TipoVehiculo } from '@/types';
-import { FiPlus, FiEdit2, FiTrash2, FiTruck } from 'react-icons/fi';
+import { FiPlus, FiTruck } from 'react-icons/fi';
 
 export default function VehiculosPage() {
   const router = useRouter();
@@ -127,6 +128,59 @@ export default function VehiculosPage() {
   const getEstadoLabel = (estado: string) => {
     return estado === 'disponible' ? 'Disponible' : 'Inactivo';
   };
+
+  // Definir columnas de la tabla
+  const columns: Column<Vehiculo>[] = [
+    {
+      key: 'placa',
+      label: 'Placa',
+      sortable: true,
+    },
+    {
+      key: 'marca',
+      label: 'Marca',
+      sortable: true,
+      render: (vehiculo) => vehiculo.marca || '-',
+    },
+    {
+      key: 'modelo',
+      label: 'Modelo',
+      sortable: true,
+      render: (vehiculo) => vehiculo.modelo || '-',
+    },
+    {
+      key: 'tipo_vehiculo_id',
+      label: 'Tipo',
+      sortable: true,
+      render: (vehiculo) => getTipoNombre(vehiculo.tipo_vehiculo_id),
+    },
+    {
+      key: 'anio',
+      label: 'Año',
+      sortable: true,
+      render: (vehiculo) => vehiculo.anio || '-',
+    },
+    {
+      key: 'estado',
+      label: 'Estado',
+      sortable: true,
+      render: (vehiculo) => (
+        <span
+          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getEstadoBadge(
+            vehiculo.estado
+          )}`}
+        >
+          {getEstadoLabel(vehiculo.estado)}
+        </span>
+      ),
+    },
+    {
+      key: 'conductor_asignado',
+      label: 'Conductor',
+      sortable: true,
+      render: (vehiculo) => vehiculo.conductor_asignado || '-',
+    },
+  ];
 
   if (authLoading || loading) {
     return (
@@ -321,93 +375,15 @@ export default function VehiculosPage() {
 
         {/* Vehiculos List */}
         <Card title="Lista de Vehículos">
-          {vehiculos.length === 0 ? (
-            <div className="text-center py-12">
-              <FiTruck className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No hay vehículos registrados
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Comience agregando vehículos a la flota.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Placa
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Tipo
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Marca/Modelo
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Año
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Estado
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Conductor
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {vehiculos.map((vehiculo) => (
-                    <tr key={vehiculo.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                        {vehiculo.placa}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {getTipoNombre(vehiculo.tipo_vehiculo_id)}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {vehiculo.marca && vehiculo.modelo
-                          ? `${vehiculo.marca} ${vehiculo.modelo}`
-                          : vehiculo.marca || vehiculo.modelo || '-'}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {vehiculo.anio || '-'}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm">
-                        <span
-                          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getEstadoBadge(
-                            vehiculo.estado
-                          )}`}
-                        >
-                          {getEstadoLabel(vehiculo.estado)}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {vehiculo.conductor_asignado || '-'}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium space-x-3">
-                        <button
-                          onClick={() => handleEdit(vehiculo)}
-                          className="text-primary-600 hover:text-primary-900 inline-flex items-center"
-                        >
-                          <FiEdit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(vehiculo.id)}
-                          className="text-red-600 hover:text-red-900 inline-flex items-center"
-                        >
-                          <FiTrash2 className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <DataTable
+            data={vehiculos}
+            columns={columns}
+            onEdit={handleEdit}
+            onDelete={(vehiculo) => handleDelete(vehiculo.id)}
+            emptyMessage="No hay vehículos registrados"
+            emptyIcon={<FiTruck className="mx-auto h-12 w-12 text-gray-400" />}
+            searchPlaceholder="Buscar vehículo..."
+          />
         </Card>
       </div>
     </DashboardLayout>

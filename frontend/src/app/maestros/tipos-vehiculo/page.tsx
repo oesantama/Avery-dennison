@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
+import DataTable, { Column } from '@/components/ui/DataTable';
 import { tiposVehiculoApi } from '@/lib/api';
 import type { TipoVehiculo, TipoVehiculoCreate } from '@/types';
-import { FiPlus, FiEdit2, FiTrash2, FiTool } from 'react-icons/fi';
+import { FiPlus, FiTool } from 'react-icons/fi';
 
 export default function TiposVehiculoPage() {
   const router = useRouter();
@@ -94,6 +95,40 @@ export default function TiposVehiculoPage() {
       ? 'bg-green-100 text-green-800'
       : 'bg-gray-100 text-gray-800';
   };
+
+  // Definir columnas de la tabla
+  const columns: Column<TipoVehiculo>[] = [
+    {
+      key: 'id',
+      label: 'ID',
+      sortable: true,
+    },
+    {
+      key: 'descripcion',
+      label: 'Descripción',
+      sortable: true,
+    },
+    {
+      key: 'estado',
+      label: 'Estado',
+      sortable: true,
+      render: (tipo) => (
+        <span
+          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getEstadoBadge(
+            tipo.estado
+          )}`}
+        >
+          {tipo.estado === 'activo' ? 'Activo' : 'Inactivo'}
+        </span>
+      ),
+    },
+    {
+      key: 'fecha_control',
+      label: 'Fecha Control',
+      sortable: true,
+      render: (tipo) => new Date(tipo.fecha_control).toLocaleDateString(),
+    },
+  ];
 
   if (authLoading || loading) {
     return (
@@ -188,79 +223,15 @@ export default function TiposVehiculoPage() {
 
         {/* Tipos List */}
         <Card title="Lista de Tipos de Vehículo">
-          {tipos.length === 0 ? (
-            <div className="text-center py-12">
-              <FiTool className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No hay tipos de vehículo registrados
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Comience agregando tipos de vehículos.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Descripción
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Estado
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Fecha Control
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {tipos.map((tipo) => (
-                    <tr key={tipo.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                        {tipo.id}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                        {tipo.descripcion}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm">
-                        <span
-                          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getEstadoBadge(
-                            tipo.estado
-                          )}`}
-                        >
-                          {tipo.estado === 'activo' ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {new Date(tipo.fecha_control).toLocaleDateString()}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium space-x-3">
-                        <button
-                          onClick={() => handleEdit(tipo)}
-                          className="text-primary-600 hover:text-primary-900 inline-flex items-center"
-                        >
-                          <FiEdit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(tipo.id)}
-                          className="text-red-600 hover:text-red-900 inline-flex items-center"
-                        >
-                          <FiTrash2 className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <DataTable
+            data={tipos}
+            columns={columns}
+            onEdit={handleEdit}
+            onDelete={(tipo) => handleDelete(tipo.id)}
+            emptyMessage="No hay tipos de vehículo registrados"
+            emptyIcon={<FiTool className="mx-auto h-12 w-12 text-gray-400" />}
+            searchPlaceholder="Buscar tipo de vehículo..."
+          />
         </Card>
       </div>
     </DashboardLayout>
