@@ -7,6 +7,9 @@ import type {
   OperacionDiariaCreate,
   VehiculoOperacion,
   VehiculoOperacionCreate,
+  Vehiculo,
+  VehiculoCreate,
+  VehiculoUpdate,
   Entrega,
   EntregaCreate,
   EntregaUpdate,
@@ -106,6 +109,38 @@ export const operacionesApi = {
   listVehiculos: async (operacionId: number): Promise<VehiculoOperacion[]> => {
     const response = await api.get<VehiculoOperacion[]>(`/api/operaciones/vehiculos/${operacionId}`);
     return response.data;
+  },
+};
+
+// Vehiculos APIs
+export const vehiculosApi = {
+  create: async (data: VehiculoCreate): Promise<Vehiculo> => {
+    const response = await api.post<Vehiculo>('/api/vehiculos/', data);
+    return response.data;
+  },
+
+  list: async (params?: {
+    skip?: number;
+    limit?: number;
+    activo?: boolean;
+    estado?: string;
+  }): Promise<Vehiculo[]> => {
+    const response = await api.get<Vehiculo[]>('/api/vehiculos/', { params });
+    return response.data;
+  },
+
+  get: async (id: number): Promise<Vehiculo> => {
+    const response = await api.get<Vehiculo>(`/api/vehiculos/${id}`);
+    return response.data;
+  },
+
+  update: async (id: number, data: VehiculoUpdate): Promise<Vehiculo> => {
+    const response = await api.put<Vehiculo>(`/api/vehiculos/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/vehiculos/${id}`);
   },
 };
 

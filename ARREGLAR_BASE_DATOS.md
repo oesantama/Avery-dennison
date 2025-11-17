@@ -1,27 +1,30 @@
-# Cómo Arreglar el Error de Base de Datos
+# Cómo Arreglar la Base de Datos
 
-## El Problema
+## Problemas que Este Documento Resuelve
 
-Ves este error:
-```
-ERROR: column usuarios.fecha_creacion does not exist
-```
+1. **Error**: `column usuarios.fecha_creacion does not exist`
+   - La base de datos tiene columnas con nombres antiguos (`created_at`, `updated_at`)
+   - El código espera nombres nuevos (`fecha_creacion`, `fecha_actualizacion`)
 
-Esto ocurre porque la base de datos tiene columnas con nombres antiguos (`created_at`, `updated_at`) pero el código espera nombres nuevos (`fecha_creacion`, `fecha_actualizacion`).
+2. **Falta tabla de vehículos**
+   - El módulo de gestión de vehículos requiere una tabla `vehiculos` que no existe
+   - Necesaria para registrar y administrar la flota de vehículos
 
 ## Solución Rápida
 
-Ejecuta estos comandos:
+Ejecuta estos comandos en orden:
 
 ```bash
 # 1. Asegúrate de que Docker esté corriendo
 docker-compose up -d
 
-# 2. Ejecuta el script de corrección (opción A - usando Python en tu máquina)
+# 2. Arreglar la tabla de usuarios
 python3 fix_database.py
-
-# O (opción B - ejecuta directamente en el contenedor de la base de datos)
+# O directamente en el contenedor:
 docker exec -i vehiculos-db psql -U postgres -d vehiculos_operacion < database/fix_usuarios_columns.sql
+
+# 3. Crear la tabla de vehículos (NUEVO)
+docker exec -i vehiculos-db psql -U postgres -d vehiculos_operacion < database/crear_tabla_vehiculos.sql
 ```
 
 ## Después de la Corrección

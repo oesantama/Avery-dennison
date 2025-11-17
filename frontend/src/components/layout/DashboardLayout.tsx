@@ -4,7 +4,7 @@ import { ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { FiHome, FiTruck, FiPackage, FiLogOut, FiBarChart2, FiMenu, FiX } from 'react-icons/fi';
+import { FiHome, FiTruck, FiPackage, FiLogOut, FiBarChart2, FiMenu, FiX, FiTool } from 'react-icons/fi';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -17,6 +17,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: FiHome },
+    { name: 'Vehículos', href: '/vehiculos', icon: FiTool },
     { name: 'Operaciones', href: '/operaciones', icon: FiTruck },
     { name: 'Entregas', href: '/entregas', icon: FiPackage },
   ];
