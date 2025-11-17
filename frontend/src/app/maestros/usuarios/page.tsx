@@ -5,27 +5,27 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
-import { vehiculosApi, tiposVehiculoApi } from '@/lib/api';
-import type { Vehiculo, VehiculoCreate, TipoVehiculo } from '@/types';
-import { FiPlus, FiEdit2, FiTrash2, FiTruck } from 'react-icons/fi';
+import { usuariosApi, rolesApi } from '@/lib/api';
+import type { UsuarioConRol, UsuarioCreate, UsuarioUpdate, Rol } from '@/types';
+import { FiPlus, FiEdit2, FiTrash2, FiUsers } from 'react-icons/fi';
 
-export default function VehiculosPage() {
+export default function UsuariosPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
-  const [tiposVehiculo, setTiposVehiculo] = useState<TipoVehiculo[]>([]);
+  const [usuarios, setUsuarios] = useState<UsuarioConRol[]>([]);
+  const [roles, setRoles] = useState<Rol[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<VehiculoCreate>({
-    placa: '',
-    marca: '',
-    modelo: '',
-    anio: new Date().getFullYear(),
-    tipo_vehiculo_id: undefined,
-    estado: 'disponible',
-    conductor_asignado: '',
-    observaciones: '',
+  const [formData, setFormData] = useState<UsuarioCreate & { password_confirm?: string }>({
+    username: '',
+    nombre_completo: '',
+    email: '',
+    numero_celular: '',
+    rol_id: 0,
+    activo: true,
+    password: '',
+    password_confirm: '',
   });
 
   useEffect(() => {
@@ -38,12 +38,12 @@ export default function VehiculosPage() {
 
   const loadData = async () => {
     try {
-      const [vehiculosData, tiposData] = await Promise.all([
-        vehiculosApi.list({ activo: true }),
-        tiposVehiculoApi.list({ estado: 'activo' }),
+      const [usuariosData, rolesData] = await Promise.all([
+        usuariosApi.list(),
+        rolesApi.list({ activo: true }),
       ]);
-      setVehiculos(vehiculosData);
-      setTiposVehiculo(tiposData);
+      setUsuarios(usuariosData);
+      setRoles(rolesData);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -53,79 +53,96 @@ export default function VehiculosPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validación de contraseñas
+    if (!editingId && formData.password !== formData.password_confirm) {
+      alert('Las contraseñas no coinciden');
+      return;
+    }
+
+    if (!editingId && formData.password.length < 6) {
+      alert('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
     try {
+      const { password_confirm, ...dataToSubmit } = formData;
+
       if (editingId) {
-        await vehiculosApi.update(editingId, formData);
+        // Solo incluir password si se proporcionó uno nuevo
+        const updateData: UsuarioUpdate = { ...dataToSubmit };
+        if (!updateData.password) {
+          delete updateData.password;
+        }
+        await usuariosApi.update(editingId, updateData);
       } else {
-        await vehiculosApi.create(formData);
+        await usuariosApi.create(dataToSubmit);
       }
       setShowForm(false);
       setEditingId(null);
       resetForm();
       loadData();
     } catch (error: any) {
-      console.error('Error saving vehiculo:', error);
-      const message = error?.response?.data?.detail || 'Error al guardar el vehículo';
+      console.error('Error saving usuario:', error);
+      const message = error?.response?.data?.detail || 'Error al guardar el usuario';
       alert(message);
     }
   };
 
-  const handleEdit = (vehiculo: Vehiculo) => {
+  const handleEdit = (usuario: UsuarioConRol) => {
     setFormData({
-      placa: vehiculo.placa,
-      marca: vehiculo.marca || '',
-      modelo: vehiculo.modelo || '',
-      anio: vehiculo.anio,
-      tipo_vehiculo_id: vehiculo.tipo_vehiculo_id,
-      estado: vehiculo.estado,
-      conductor_asignado: vehiculo.conductor_asignado || '',
-      observaciones: vehiculo.observaciones || '',
+      username: usuario.username,
+      nombre_completo: usuario.nombre_completo || '',
+      email: usuario.email,
+      numero_celular: usuario.numero_celular || '',
+      rol_id: usuario.rol_id,
+      activo: usuario.activo,
+      password: '',
+      password_confirm: '',
     });
-    setEditingId(vehiculo.id);
+    setEditingId(usuario.id);
     setShowForm(true);
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Está seguro de que desea eliminar este vehículo?')) {
+    if (!confirm('¿Está seguro de que desea desactivar este usuario?')) {
       return;
     }
     try {
-      await vehiculosApi.delete(id);
+      await usuariosApi.delete(id);
       loadData();
-    } catch (error) {
-      console.error('Error deleting vehiculo:', error);
-      alert('Error al eliminar el vehículo');
+    } catch (error: any) {
+      console.error('Error deleting usuario:', error);
+      const message = error?.response?.data?.detail || 'Error al desactivar el usuario';
+      alert(message);
     }
   };
 
   const resetForm = () => {
     setFormData({
-      placa: '',
-      marca: '',
-      modelo: '',
-      anio: new Date().getFullYear(),
-      tipo_vehiculo_id: undefined,
-      estado: 'disponible',
-      conductor_asignado: '',
-      observaciones: '',
+      username: '',
+      nombre_completo: '',
+      email: '',
+      numero_celular: '',
+      rol_id: 0,
+      activo: true,
+      password: '',
+      password_confirm: '',
     });
     setEditingId(null);
   };
 
-  const getTipoNombre = (tipoId?: number) => {
-    if (!tipoId) return '-';
-    const tipo = tiposVehiculo.find(t => t.id === tipoId);
-    return tipo?.descripcion || '-';
+  const getRolNombre = (rolId: number) => {
+    const rol = roles.find((r) => r.id === rolId);
+    return rol?.nombre || '-';
   };
 
-  const getEstadoBadge = (estado: string) => {
-    return estado === 'disponible'
-      ? 'bg-green-100 text-green-800'
-      : 'bg-gray-100 text-gray-800';
+  const getActivoBadge = (activo: boolean) => {
+    return activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
   };
 
-  const getEstadoLabel = (estado: string) => {
-    return estado === 'disponible' ? 'Disponible' : 'Inactivo';
+  const getActivoLabel = (activo: boolean) => {
+    return activo ? 'Activo' : 'Inactivo';
   };
 
   if (authLoading || loading) {
@@ -143,9 +160,9 @@ export default function VehiculosPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestión de Vehículos</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Gestión de Usuarios</h1>
             <p className="mt-2 text-sm text-gray-700">
-              Administre la flota de vehículos del sistema
+              Administre los usuarios del sistema
             </p>
           </div>
           <button
@@ -156,98 +173,99 @@ export default function VehiculosPage() {
             className="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500"
           >
             <FiPlus className="mr-2 h-5 w-5" />
-            Nuevo Vehículo
+            Nuevo Usuario
           </button>
         </div>
 
         {/* Create/Edit Form */}
         {showForm && (
-          <Card title={editingId ? 'Editar Vehículo' : 'Nuevo Vehículo'}>
+          <Card title={editingId ? 'Editar Usuario' : 'Nuevo Usuario'}>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Placa *
+                    Username *
                   </label>
                   <input
                     type="text"
                     required
-                    value={formData.placa}
+                    value={formData.username}
                     onChange={(e) =>
-                      setFormData({ ...formData, placa: e.target.value.toUpperCase() })
+                      setFormData({ ...formData, username: e.target.value })
                     }
-                    placeholder="ABC123"
+                    placeholder="usuario123"
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Tipo de Vehículo
+                    Nombre Completo
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nombre_completo}
+                    onChange={(e) =>
+                      setFormData({ ...formData, nombre_completo: e.target.value })
+                    }
+                    placeholder="Juan Pérez"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    placeholder="usuario@example.com"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Número de Celular
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.numero_celular}
+                    onChange={(e) =>
+                      setFormData({ ...formData, numero_celular: e.target.value })
+                    }
+                    placeholder="+51 999 999 999"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Rol *
                   </label>
                   <select
-                    value={formData.tipo_vehiculo_id || ''}
+                    required
+                    value={formData.rol_id || ''}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        tipo_vehiculo_id: e.target.value ? parseInt(e.target.value) : undefined,
+                        rol_id: parseInt(e.target.value),
                       })
                     }
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
                   >
-                    <option value="">Seleccione un tipo</option>
-                    {tiposVehiculo.map((tipo) => (
-                      <option key={tipo.id} value={tipo.id}>
-                        {tipo.descripcion}
+                    <option value="">Seleccione un rol</option>
+                    {roles.map((rol) => (
+                      <option key={rol.id} value={rol.id}>
+                        {rol.nombre}
                       </option>
                     ))}
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Marca
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.marca}
-                    onChange={(e) =>
-                      setFormData({ ...formData, marca: e.target.value })
-                    }
-                    placeholder="Toyota, Ford, etc."
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Modelo
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.modelo}
-                    onChange={(e) =>
-                      setFormData({ ...formData, modelo: e.target.value })
-                    }
-                    placeholder="Hilux, F-150, etc."
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Año
-                  </label>
-                  <input
-                    type="number"
-                    min="1900"
-                    max={new Date().getFullYear() + 1}
-                    value={formData.anio}
-                    onChange={(e) =>
-                      setFormData({ ...formData, anio: parseInt(e.target.value) })
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
-                  />
                 </div>
 
                 <div>
@@ -256,42 +274,47 @@ export default function VehiculosPage() {
                   </label>
                   <select
                     required
-                    value={formData.estado}
+                    value={formData.activo ? 'true' : 'false'}
                     onChange={(e) =>
-                      setFormData({ ...formData, estado: e.target.value as any })
+                      setFormData({ ...formData, activo: e.target.value === 'true' })
                     }
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
                   >
-                    <option value="disponible">Disponible</option>
-                    <option value="inactivo">Inactivo</option>
+                    <option value="true">Activo</option>
+                    <option value="false">Inactivo</option>
                   </select>
                 </div>
 
-                <div className="sm:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Conductor Asignado
+                    {editingId ? 'Nueva Contraseña (dejar en blanco para no cambiar)' : 'Contraseña *'}
                   </label>
                   <input
-                    type="text"
-                    value={formData.conductor_asignado}
+                    type="password"
+                    required={!editingId}
+                    value={formData.password}
                     onChange={(e) =>
-                      setFormData({ ...formData, conductor_asignado: e.target.value })
+                      setFormData({ ...formData, password: e.target.value })
                     }
-                    placeholder="Nombre del conductor"
+                    placeholder="••••••••"
+                    minLength={6}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
 
-                <div className="sm:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Observaciones
+                    {editingId ? 'Confirmar Nueva Contraseña' : 'Confirmar Contraseña *'}
                   </label>
-                  <textarea
-                    rows={3}
-                    value={formData.observaciones}
+                  <input
+                    type="password"
+                    required={!editingId}
+                    value={formData.password_confirm}
                     onChange={(e) =>
-                      setFormData({ ...formData, observaciones: e.target.value })
+                      setFormData({ ...formData, password_confirm: e.target.value })
                     }
+                    placeholder="••••••••"
+                    minLength={6}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
@@ -312,23 +335,23 @@ export default function VehiculosPage() {
                   type="submit"
                   className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500"
                 >
-                  {editingId ? 'Actualizar' : 'Crear'} Vehículo
+                  {editingId ? 'Actualizar' : 'Crear'} Usuario
                 </button>
               </div>
             </form>
           </Card>
         )}
 
-        {/* Vehiculos List */}
-        <Card title="Lista de Vehículos">
-          {vehiculos.length === 0 ? (
+        {/* Usuarios List */}
+        <Card title="Lista de Usuarios">
+          {usuarios.length === 0 ? (
             <div className="text-center py-12">
-              <FiTruck className="mx-auto h-12 w-12 text-gray-400" />
+              <FiUsers className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No hay vehículos registrados
+                No hay usuarios registrados
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                Comience agregando vehículos a la flota.
+                Comience agregando usuarios al sistema.
               </p>
             </div>
           ) : (
@@ -337,22 +360,19 @@ export default function VehiculosPage() {
                 <thead>
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Placa
+                      Username
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Tipo
+                      Nombre Completo
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Marca/Modelo
+                      Email
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Año
+                      Rol
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                       Estado
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Conductor
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                       Acciones
@@ -360,43 +380,38 @@ export default function VehiculosPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                  {vehiculos.map((vehiculo) => (
-                    <tr key={vehiculo.id} className="hover:bg-gray-50">
+                  {usuarios.map((usuario) => (
+                    <tr key={usuario.id} className="hover:bg-gray-50">
                       <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                        {vehiculo.placa}
+                        {usuario.username}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {getTipoNombre(vehiculo.tipo_vehiculo_id)}
+                        {usuario.nombre_completo || '-'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {vehiculo.marca && vehiculo.modelo
-                          ? `${vehiculo.marca} ${vehiculo.modelo}`
-                          : vehiculo.marca || vehiculo.modelo || '-'}
+                        {usuario.email}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {vehiculo.anio || '-'}
+                        {usuario.rol?.nombre || getRolNombre(usuario.rol_id)}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm">
                         <span
-                          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getEstadoBadge(
-                            vehiculo.estado
+                          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getActivoBadge(
+                            usuario.activo
                           )}`}
                         >
-                          {getEstadoLabel(vehiculo.estado)}
+                          {getActivoLabel(usuario.activo)}
                         </span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {vehiculo.conductor_asignado || '-'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm font-medium space-x-3">
                         <button
-                          onClick={() => handleEdit(vehiculo)}
+                          onClick={() => handleEdit(usuario)}
                           className="text-primary-600 hover:text-primary-900 inline-flex items-center"
                         >
                           <FiEdit2 className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(vehiculo.id)}
+                          onClick={() => handleDelete(usuario.id)}
                           className="text-red-600 hover:text-red-900 inline-flex items-center"
                         >
                           <FiTrash2 className="h-4 w-4" />

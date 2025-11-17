@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.database import Base
 
 class Vehiculo(Base):
@@ -10,10 +11,14 @@ class Vehiculo(Base):
     marca = Column(String(50))
     modelo = Column(String(50))
     anio = Column(Integer)
-    tipo = Column(String(30))
-    estado = Column(String(20), default='disponible', index=True)
+    tipo = Column(String(30))  # Deprecated - mantener por compatibilidad
+    tipo_vehiculo_id = Column(Integer, ForeignKey('tipos_vehiculo.id'), nullable=True, index=True)
+    estado = Column(String(20), default='disponible', index=True)  # 'disponible' o 'inactivo'
     conductor_asignado = Column(String(100))
     observaciones = Column(Text)
     activo = Column(Boolean, default=True, index=True)
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     fecha_actualizacion = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # Relación con tipo de vehículo
+    tipo_vehiculo_rel = relationship("TipoVehiculo", back_populates="vehiculos")
