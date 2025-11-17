@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
+import DataTable, { Column } from '@/components/ui/DataTable';
 import { usuariosApi, rolesApi } from '@/lib/api';
 import type { UsuarioConRol, UsuarioCreate, UsuarioUpdate, Rol } from '@/types';
-import { FiPlus, FiEdit2, FiTrash2, FiUsers } from 'react-icons/fi';
+import { FiPlus, FiUsers } from 'react-icons/fi';
 
 export default function UsuariosPage() {
   const router = useRouter();
@@ -144,6 +145,46 @@ export default function UsuariosPage() {
   const getActivoLabel = (activo: boolean) => {
     return activo ? 'Activo' : 'Inactivo';
   };
+
+  // Definir columnas de la tabla
+  const columns: Column<UsuarioConRol>[] = [
+    {
+      key: 'username',
+      label: 'Username',
+      sortable: true,
+    },
+    {
+      key: 'nombre_completo',
+      label: 'Nombre Completo',
+      sortable: true,
+      render: (usuario) => usuario.nombre_completo || '-',
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      sortable: true,
+    },
+    {
+      key: 'rol',
+      label: 'Rol',
+      sortable: true,
+      render: (usuario) => usuario.rol?.nombre || getRolNombre(usuario.rol_id),
+    },
+    {
+      key: 'activo',
+      label: 'Estado',
+      sortable: true,
+      render: (usuario) => (
+        <span
+          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getActivoBadge(
+            usuario.activo
+          )}`}
+        >
+          {getActivoLabel(usuario.activo)}
+        </span>
+      ),
+    },
+  ];
 
   if (authLoading || loading) {
     return (
@@ -344,85 +385,15 @@ export default function UsuariosPage() {
 
         {/* Usuarios List */}
         <Card title="Lista de Usuarios">
-          {usuarios.length === 0 ? (
-            <div className="text-center py-12">
-              <FiUsers className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No hay usuarios registrados
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Comience agregando usuarios al sistema.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Username
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Nombre Completo
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Rol
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Estado
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {usuarios.map((usuario) => (
-                    <tr key={usuario.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                        {usuario.username}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {usuario.nombre_completo || '-'}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {usuario.email}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {usuario.rol?.nombre || getRolNombre(usuario.rol_id)}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm">
-                        <span
-                          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getActivoBadge(
-                            usuario.activo
-                          )}`}
-                        >
-                          {getActivoLabel(usuario.activo)}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium space-x-3">
-                        <button
-                          onClick={() => handleEdit(usuario)}
-                          className="text-primary-600 hover:text-primary-900 inline-flex items-center"
-                        >
-                          <FiEdit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(usuario.id)}
-                          className="text-red-600 hover:text-red-900 inline-flex items-center"
-                        >
-                          <FiTrash2 className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <DataTable
+            data={usuarios}
+            columns={columns}
+            onEdit={handleEdit}
+            onDelete={(usuario) => handleDelete(usuario.id)}
+            emptyMessage="No hay usuarios registrados"
+            emptyIcon={<FiUsers className="mx-auto h-12 w-12 text-gray-400" />}
+            searchPlaceholder="Buscar usuario..."
+          />
         </Card>
       </div>
     </DashboardLayout>
