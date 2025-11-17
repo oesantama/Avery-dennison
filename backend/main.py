@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from app.database import engine, Base
-from app.routes import auth, operaciones, entregas, dashboard
+from app.routes import auth, operaciones, entregas, dashboard, usuarios, rbac
 from app.config import get_settings
 
 # Create tables
@@ -38,6 +38,8 @@ app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads"
 
 # Include routers
 app.include_router(auth.router)
+app.include_router(usuarios.router)
+app.include_router(rbac.router)
 app.include_router(operaciones.router)
 app.include_router(entregas.router)
 app.include_router(dashboard.router)
