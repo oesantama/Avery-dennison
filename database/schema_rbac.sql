@@ -151,14 +151,14 @@ ON CONFLICT (rol_id, page_id) DO NOTHING;
 
 -- ================================================
 -- ACTUALIZAR USUARIO ADMIN EXISTENTE
--- Asignarle el rol de Administrador y email
+-- Asignarle el rol de Administrador, email y número de celular
 -- ================================================
 UPDATE usuarios
 SET
     rol_id = (SELECT id FROM roles WHERE nombre = 'Administrador'),
-    email = 'admin@sistema.local',
-    numero_celular = NULL
-WHERE username = 'admin' AND rol_id IS NULL;
+    email = COALESCE(email, 'admin@sistema.local'),
+    numero_celular = COALESCE(numero_celular, '+57 300 123 4567')
+WHERE username = 'admin';
 
 -- ================================================
 -- ÍNDICES PARA OPTIMIZACIÓN

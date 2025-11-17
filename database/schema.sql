@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     nombre_completo VARCHAR(100),
-    email VARCHAR(100),
+    email VARCHAR(255) UNIQUE,
+    numero_celular VARCHAR(20),
     activo BOOLEAN DEFAULT TRUE,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
