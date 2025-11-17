@@ -75,12 +75,14 @@ CREATE TABLE IF NOT EXISTS permisos_usuario (
 -- ACTUALIZAR TABLA: usuarios
 -- Agregar campos para RBAC
 -- ================================================
+-- Nota: email, fecha_creacion y fecha_actualizacion ya existen en schema.sql
 ALTER TABLE usuarios
-ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE,
 ADD COLUMN IF NOT EXISTS numero_celular VARCHAR(20),
 ADD COLUMN IF NOT EXISTS rol_id INTEGER REFERENCES roles(id),
-ADD COLUMN IF NOT EXISTS creado_por INTEGER REFERENCES usuarios(id),
-ADD COLUMN IF NOT EXISTS fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ADD COLUMN IF NOT EXISTS creado_por INTEGER REFERENCES usuarios(id);
+
+-- Ampliar tamaño de columna email si es necesario
+ALTER TABLE usuarios ALTER COLUMN email TYPE VARCHAR(255);
 
 -- ================================================
 -- DATOS INICIALES: Roles
