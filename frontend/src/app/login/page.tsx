@@ -84,7 +84,7 @@ export default function LoginPage() {
     }
   };
 
-  const isBlocked = blockedUntil && blockedUntil > Date.now();
+  const isBlocked = !!(blockedUntil && blockedUntil > Date.now());
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
