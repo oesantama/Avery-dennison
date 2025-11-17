@@ -106,3 +106,41 @@ export interface DashboardFilters {
   placa?: string;
   estado?: string;
 }
+
+export interface Vehiculo {
+  id: number;
+  placa: string;
+  marca?: string;
+  modelo?: string;
+  anio?: number;
+  tipo?: string;
+  estado: 'disponible' | 'en_operacion' | 'mantenimiento' | 'inactivo';
+  conductor_asignado?: string;
+  observaciones?: string;
+  activo: boolean;
+  fecha_creacion: string;
+  fecha_actualizacion?: string;
+}
+
+export interface VehiculoCreate {
+  placa: string;
+  marca?: string;
+  modelo?: string;
+  anio?: number;
+  tipo?: string;
+  estado?: 'disponible' | 'en_operacion' | 'mantenimiento' | 'inactivo';
+  conductor_asignado?: string;
+  observaciones?: string;
+}
+
+export interface VehiculoUpdate {
+  placa?: string;
+  marca?: string;
+  modelo?: string;
+  anio?: number;
+  tipo?: string;
+  estado?: 'disponible' | 'en_operacion' | 'mantenimiento' | 'inactivo';
+  conductor_asignado?: string;
+  observaciones?: string;
+  activo?: boolean;
+}
