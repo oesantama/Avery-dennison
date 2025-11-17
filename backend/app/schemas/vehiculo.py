@@ -7,8 +7,9 @@ class VehiculoBase(BaseModel):
     marca: Optional[str] = None
     modelo: Optional[str] = None
     anio: Optional[int] = None
-    tipo: Optional[str] = None
-    estado: Optional[str] = 'disponible'
+    tipo: Optional[str] = None  # Deprecated - mantener por compatibilidad
+    tipo_vehiculo_id: Optional[int] = None
+    estado: Optional[str] = 'disponible'  # 'disponible' o 'inactivo'
     conductor_asignado: Optional[str] = None
     observaciones: Optional[str] = None
     activo: Optional[bool] = True
@@ -22,6 +23,7 @@ class VehiculoUpdate(BaseModel):
     modelo: Optional[str] = None
     anio: Optional[int] = None
     tipo: Optional[str] = None
+    tipo_vehiculo_id: Optional[int] = None
     estado: Optional[str] = None
     conductor_asignado: Optional[str] = None
     observaciones: Optional[str] = None

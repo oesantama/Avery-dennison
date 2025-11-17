@@ -114,7 +114,8 @@ export interface Vehiculo {
   modelo?: string;
   anio?: number;
   tipo?: string;
-  estado: 'disponible' | 'en_operacion' | 'mantenimiento' | 'inactivo';
+  tipo_vehiculo_id?: number;
+  estado: 'disponible' | 'inactivo';
   conductor_asignado?: string;
   observaciones?: string;
   activo: boolean;
@@ -128,7 +129,8 @@ export interface VehiculoCreate {
   modelo?: string;
   anio?: number;
   tipo?: string;
-  estado?: 'disponible' | 'en_operacion' | 'mantenimiento' | 'inactivo';
+  tipo_vehiculo_id?: number;
+  estado?: 'disponible' | 'inactivo';
   conductor_asignado?: string;
   observaciones?: string;
 }
@@ -139,8 +141,60 @@ export interface VehiculoUpdate {
   modelo?: string;
   anio?: number;
   tipo?: string;
-  estado?: 'disponible' | 'en_operacion' | 'mantenimiento' | 'inactivo';
+  tipo_vehiculo_id?: number;
+  estado?: 'disponible' | 'inactivo';
   conductor_asignado?: string;
   observaciones?: string;
   activo?: boolean;
+}
+
+// Tipos de Vehículo
+export interface TipoVehiculo {
+  id: number;
+  descripcion: string;
+  estado: 'activo' | 'inactivo';
+  fecha_control: string;
+  usuario_control?: number;
+}
+
+export interface TipoVehiculoCreate {
+  descripcion: string;
+  estado?: 'activo' | 'inactivo';
+}
+
+export interface TipoVehiculoUpdate {
+  descripcion?: string;
+  estado?: 'activo' | 'inactivo';
+}
+
+// Permisos por Rol
+export interface PermisoRol {
+  id: number;
+  rol_id: number;
+  page_id: number;
+  estado: 'activo' | 'inactivo';
+  puede_ver: boolean;
+  puede_crear: boolean;
+  puede_editar: boolean;
+  puede_borrar: boolean;
+  fecha_control: string;
+  usuario_control?: number;
+}
+
+export interface PermisoRolCreate {
+  rol_id: number;
+  page_id: number;
+  estado?: 'activo' | 'inactivo';
+  puede_ver?: boolean;
+  puede_crear?: boolean;
+  puede_editar?: boolean;
+  puede_borrar?: boolean;
+}
+
+export interface PermisoRolUpdate {
+  estado?: 'activo' | 'inactivo';
+  puede_ver?: boolean;
+  puede_crear?: boolean;
+  puede_editar?: boolean;
+  puede_borrar?: boolean;
 }
