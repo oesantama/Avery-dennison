@@ -107,13 +107,33 @@ export interface DashboardFilters {
   estado?: string;
 }
 
+export interface TipoVehiculo {
+  id: number;
+  descripcion: string;
+  estado: 'Activo' | 'Inactivo';
+  fecha_creacion: string;
+  fecha_actualizacion?: string;
+}
+
+export interface TipoVehiculoCreate {
+  descripcion: string;
+  estado?: 'Activo' | 'Inactivo';
+}
+
+export interface TipoVehiculoUpdate {
+  descripcion?: string;
+  estado?: 'Activo' | 'Inactivo';
+}
+
 export interface Vehiculo {
   id: number;
   placa: string;
   marca?: string;
   modelo?: string;
   anio?: number;
-  tipo?: string;
+  tipo?: string; // Campo legacy
+  tipo_vehiculo_id?: number;
+  tipo_descripcion?: string; // Descripción del tipo de vehículo
   estado: 'disponible' | 'en_operacion' | 'mantenimiento' | 'inactivo';
   conductor_asignado?: string;
   observaciones?: string;
@@ -128,6 +148,7 @@ export interface VehiculoCreate {
   modelo?: string;
   anio?: number;
   tipo?: string;
+  tipo_vehiculo_id: number; // Obligatorio
   estado?: 'disponible' | 'en_operacion' | 'mantenimiento' | 'inactivo';
   conductor_asignado?: string;
   observaciones?: string;
@@ -139,6 +160,7 @@ export interface VehiculoUpdate {
   modelo?: string;
   anio?: number;
   tipo?: string;
+  tipo_vehiculo_id?: number;
   estado?: 'disponible' | 'en_operacion' | 'mantenimiento' | 'inactivo';
   conductor_asignado?: string;
   observaciones?: string;

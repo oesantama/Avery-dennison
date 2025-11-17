@@ -10,6 +10,9 @@ import type {
   Vehiculo,
   VehiculoCreate,
   VehiculoUpdate,
+  TipoVehiculo,
+  TipoVehiculoCreate,
+  TipoVehiculoUpdate,
   Entrega,
   EntregaCreate,
   EntregaUpdate,
@@ -112,6 +115,42 @@ export const operacionesApi = {
   },
 };
 
+// Tipos de Vehiculo APIs
+export const tiposVehiculoApi = {
+  create: async (data: TipoVehiculoCreate): Promise<TipoVehiculo> => {
+    const response = await api.post<TipoVehiculo>('/api/tipos-vehiculo/', data);
+    return response.data;
+  },
+
+  list: async (params?: {
+    skip?: number;
+    limit?: number;
+    estado?: string;
+  }): Promise<TipoVehiculo[]> => {
+    const response = await api.get<TipoVehiculo[]>('/api/tipos-vehiculo/', { params });
+    return response.data;
+  },
+
+  listActivos: async (): Promise<TipoVehiculo[]> => {
+    const response = await api.get<TipoVehiculo[]>('/api/tipos-vehiculo/activos');
+    return response.data;
+  },
+
+  get: async (id: number): Promise<TipoVehiculo> => {
+    const response = await api.get<TipoVehiculo>(`/api/tipos-vehiculo/${id}`);
+    return response.data;
+  },
+
+  update: async (id: number, data: TipoVehiculoUpdate): Promise<TipoVehiculo> => {
+    const response = await api.put<TipoVehiculo>(`/api/tipos-vehiculo/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/tipos-vehiculo/${id}`);
+  },
+};
+
 // Vehiculos APIs
 export const vehiculosApi = {
   create: async (data: VehiculoCreate): Promise<Vehiculo> => {
@@ -126,6 +165,11 @@ export const vehiculosApi = {
     estado?: string;
   }): Promise<Vehiculo[]> => {
     const response = await api.get<Vehiculo[]>('/api/vehiculos/', { params });
+    return response.data;
+  },
+
+  listDisponibles: async (): Promise<Vehiculo[]> => {
+    const response = await api.get<Vehiculo[]>('/api/vehiculos/disponibles');
     return response.data;
   },
 

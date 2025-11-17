@@ -5,14 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
-import { vehiculosApi } from '@/lib/api';
-import type { Vehiculo, VehiculoCreate } from '@/types';
+import { vehiculosApi, tiposVehiculoApi } from '@/lib/api';
+import type { Vehiculo, VehiculoCreate, TipoVehiculo } from '@/types';
 import { FiPlus, FiEdit2, FiTrash2, FiTruck } from 'react-icons/fi';
 
 export default function VehiculosPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
+  const [tiposVehiculo, setTiposVehiculo] = useState<TipoVehiculo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -22,6 +23,7 @@ export default function VehiculosPage() {
     modelo: '',
     anio: new Date().getFullYear(),
     tipo: '',
+    tipo_vehiculo_id: 0,
     estado: 'disponible',
     conductor_asignado: '',
     observaciones: '',
@@ -32,6 +34,7 @@ export default function VehiculosPage() {
       router.push('/login');
     } else if (user) {
       loadVehiculos();
+      loadTiposVehiculo();
     }
   }, [user, authLoading, router]);
 
@@ -43,6 +46,15 @@ export default function VehiculosPage() {
       console.error('Error loading vehiculos:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadTiposVehiculo = async () => {
+    try {
+      const data = await tiposVehiculoApi.listActivos();
+      setTiposVehiculo(data);
+    } catch (error) {
+      console.error('Error loading tipos de vehiculo:', error);
     }
   };
 
@@ -70,8 +82,9 @@ export default function VehiculosPage() {
       placa: vehiculo.placa,
       marca: vehiculo.marca || '',
       modelo: vehiculo.modelo || '',
-      anio: vehiculo.anio,
+      anio: vehiculo.anio || new Date().getFullYear(),
       tipo: vehiculo.tipo || '',
+      tipo_vehiculo_id: vehiculo.tipo_vehiculo_id || 0,
       estado: vehiculo.estado,
       conductor_asignado: vehiculo.conductor_asignado || '',
       observaciones: vehiculo.observaciones || '',
@@ -100,6 +113,7 @@ export default function VehiculosPage() {
       modelo: '',
       anio: new Date().getFullYear(),
       tipo: '',
+      tipo_vehiculo_id: 0,
       estado: 'disponible',
       conductor_asignado: '',
       observaciones: '',
@@ -228,22 +242,28 @@ export default function VehiculosPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Tipo
+                    Tipo *
                   </label>
                   <select
-                    value={formData.tipo}
+                    required
+                    value={formData.tipo_vehiculo_id || ''}
                     onChange={(e) =>
-                      setFormData({ ...formData, tipo: e.target.value })
+                      setFormData({ ...formData, tipo_vehiculo_id: parseInt(e.target.value) })
                     }
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
                   >
-                    <option value="">Seleccione un tipo</option>
-                    <option value="Camioneta">Camioneta</option>
-                    <option value="Camión">Camión</option>
-                    <option value="Furgón">Furgón</option>
-                    <option value="Automóvil">Automóvil</option>
-                    <option value="Motocicleta">Motocicleta</option>
+                    <option value="">Seleccione un tipo de vehículo</option>
+                    {tiposVehiculo.map((tipo) => (
+                      <option key={tipo.id} value={tipo.id}>
+                        {tipo.descripcion}
+                      </option>
+                    ))}
                   </select>
+                  {tiposVehiculo.length === 0 && (
+                    <p className="mt-1 text-sm text-yellow-600">
+                      No hay tipos de vehículo disponibles. Contacte al administrador.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -372,7 +392,7 @@ export default function VehiculosPage() {
                         {vehiculo.anio || '-'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {vehiculo.tipo || '-'}
+                        {vehiculo.tipo_descripcion || vehiculo.tipo || 'Sin tipo'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm">
                         <span

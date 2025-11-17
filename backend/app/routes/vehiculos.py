@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
 from app.models.vehiculo import Vehiculo
+from app.models.tipo_vehiculo import TipoVehiculo
 from app.schemas.vehiculo import VehiculoCreate, VehiculoUpdate, VehiculoResponse
 from app.auth import get_current_active_user
 from app.models.usuario import Usuario
@@ -30,7 +31,42 @@ def list_vehiculos(
         query = query.filter(Vehiculo.estado == estado)
 
     vehiculos = query.order_by(Vehiculo.fecha_creacion.desc()).offset(skip).limit(limit).all()
-    return vehiculos
+
+    # Poblar tipo_descripcion
+    result = []
+    for vehiculo in vehiculos:
+        vehiculo_dict = {
+            **vehiculo.__dict__,
+            'tipo_descripcion': vehiculo.tipo_vehiculo.descripcion if vehiculo.tipo_vehiculo else None
+        }
+        result.append(VehiculoResponse(**vehiculo_dict))
+
+    return result
+
+@router.get("/disponibles", response_model=List[VehiculoResponse])
+def list_vehiculos_disponibles(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    """
+    Obtener vehículos disponibles para asignar a entregas
+    """
+    vehiculos = db.query(Vehiculo).filter(
+        Vehiculo.activo == True,
+        Vehiculo.estado == 'disponible'
+    ).order_by(Vehiculo.placa).all()
+
+    # Poblar tipo_descripcion
+    result = []
+    for vehiculo in vehiculos:
+        vehiculo_dict = {
+            **vehiculo.__dict__,
+            'tipo_descripcion': vehiculo.tipo_vehiculo.descripcion if vehiculo.tipo_vehiculo else None
+        }
+        result.append(VehiculoResponse(**vehiculo_dict))
+
+    return result
+
 
 @router.get("/{vehiculo_id}", response_model=VehiculoResponse)
 def get_vehiculo(
@@ -47,7 +83,14 @@ def get_vehiculo(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Vehículo no encontrado"
         )
-    return vehiculo
+
+    # Poblar tipo_descripcion
+    vehiculo_dict = {
+        **vehiculo.__dict__,
+        'tipo_descripcion': vehiculo.tipo_vehiculo.descripcion if vehiculo.tipo_vehiculo else None
+    }
+
+    return VehiculoResponse(**vehiculo_dict)
 
 @router.post("/", response_model=VehiculoResponse, status_code=status.HTTP_201_CREATED)
 def create_vehiculo(
@@ -66,12 +109,34 @@ def create_vehiculo(
             detail="Ya existe un vehículo con esta placa"
         )
 
+    # Validar que el tipo de vehículo existe y está activo
+    tipo_vehiculo = db.query(TipoVehiculo).filter(
+        TipoVehiculo.id == vehiculo_data.tipo_vehiculo_id
+    ).first()
+    if not tipo_vehiculo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El tipo de vehículo seleccionado no existe"
+        )
+    if tipo_vehiculo.estado != 'Activo':
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El tipo de vehículo seleccionado no está activo"
+        )
+
     # Crear vehículo
     vehiculo = Vehiculo(**vehiculo_data.model_dump())
     db.add(vehiculo)
     db.commit()
     db.refresh(vehiculo)
-    return vehiculo
+
+    # Poblar tipo_descripcion
+    vehiculo_dict = {
+        **vehiculo.__dict__,
+        'tipo_descripcion': vehiculo.tipo_vehiculo.descripcion if vehiculo.tipo_vehiculo else None
+    }
+
+    return VehiculoResponse(**vehiculo_dict)
 
 @router.put("/{vehiculo_id}", response_model=VehiculoResponse)
 def update_vehiculo(
@@ -99,13 +164,36 @@ def update_vehiculo(
                 detail="Ya existe un vehículo con esta placa"
             )
 
+    # Si se está actualizando el tipo, validar que existe y está activo
+    if vehiculo_data.tipo_vehiculo_id:
+        tipo_vehiculo = db.query(TipoVehiculo).filter(
+            TipoVehiculo.id == vehiculo_data.tipo_vehiculo_id
+        ).first()
+        if not tipo_vehiculo:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El tipo de vehículo seleccionado no existe"
+            )
+        if tipo_vehiculo.estado != 'Activo':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El tipo de vehículo seleccionado no está activo"
+            )
+
     # Actualizar campos
     for field, value in vehiculo_data.model_dump(exclude_unset=True).items():
         setattr(vehiculo, field, value)
 
     db.commit()
     db.refresh(vehiculo)
-    return vehiculo
+
+    # Poblar tipo_descripcion
+    vehiculo_dict = {
+        **vehiculo.__dict__,
+        'tipo_descripcion': vehiculo.tipo_vehiculo.descripcion if vehiculo.tipo_vehiculo else None
+    }
+
+    return VehiculoResponse(**vehiculo_dict)
 
 @router.delete("/{vehiculo_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_vehiculo(
