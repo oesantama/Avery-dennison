@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     nombre_completo VARCHAR(100),
     email VARCHAR(100),
     activo BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tabla de operaciones diarias (captura de vehículos necesarios)
@@ -72,26 +72,26 @@ CREATE INDEX idx_entregas_fecha_cumplido ON entregas(fecha_cumplido);
 CREATE INDEX idx_vehiculo_operacion ON vehiculos_operacion(operacion_id);
 CREATE INDEX idx_entregas_vehiculo ON entregas(vehiculo_operacion_id);
 
--- Trigger para actualizar updated_at automáticamente
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+-- Trigger para actualizar fecha_actualizacion automáticamente
+CREATE OR REPLACE FUNCTION update_fecha_actualizacion_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
+    NEW.fecha_actualizacion = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER update_usuarios_updated_at BEFORE UPDATE ON usuarios
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_usuarios_fecha_actualizacion BEFORE UPDATE ON usuarios
+    FOR EACH ROW EXECUTE FUNCTION update_fecha_actualizacion_column();
 
 CREATE TRIGGER update_operaciones_updated_at BEFORE UPDATE ON operaciones_diarias
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    FOR EACH ROW EXECUTE FUNCTION update_fecha_actualizacion_column();
 
 CREATE TRIGGER update_vehiculos_updated_at BEFORE UPDATE ON vehiculos_operacion
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    FOR EACH ROW EXECUTE FUNCTION update_fecha_actualizacion_column();
 
 CREATE TRIGGER update_entregas_updated_at BEFORE UPDATE ON entregas
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    FOR EACH ROW EXECUTE FUNCTION update_fecha_actualizacion_column();
 
 -- Datos de ejemplo (usuario admin con contraseña: admin123)
 -- Eliminar usuario admin existente para recrearlo con hash correcto
