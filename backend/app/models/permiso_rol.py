@@ -14,5 +14,5 @@ class PermisoRol(Base):
     puede_crear = Column(Boolean, default=False)
     puede_editar = Column(Boolean, default=False)
     puede_borrar = Column(Boolean, default=False)
-    fecha_control = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    fecha_control = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     usuario_control = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
