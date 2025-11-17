@@ -114,6 +114,15 @@ export const operacionesApi = {
     const response = await api.get<VehiculoOperacion[]>(`/api/operaciones/vehiculos/${operacionId}`);
     return response.data;
   },
+
+  update: async (id: number, data: OperacionDiariaUpdate): Promise<OperacionDiaria> => {
+    const response = await api.put<OperacionDiaria>(`/api/operaciones/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/operaciones/${id}`);
+  },
 };
 
 // Tipos de Vehiculo APIs

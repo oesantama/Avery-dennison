@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import { entregasApi, operacionesApi } from '@/lib/api';
-import type { Entrega, VehiculoOperacion } from '@/types';
+import type { Entrega, VehiculoOperacion, OperacionDiaria } from '@/types';
 import { FiPlus, FiCheckCircle, FiUpload, FiImage, FiDownload } from 'react-icons/fi';
 import { useExportToExcel } from '@/hooks/useExportToExcel';
 
@@ -18,8 +18,10 @@ export default function EntregasPage() {
   const { exportToExcel } = useExportToExcel();
   const [entregas, setEntregas] = useState<Entrega[]>([]);
   const [vehiculos, setVehiculos] = useState<VehiculoOperacion[]>([]);
+  const [operaciones, setOperaciones] = useState<OperacionDiaria[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [selectedVehiculoId, setSelectedVehiculoId] = useState<number | null>(
     vehiculoIdParam ? parseInt(vehiculoIdParam) : null
   );
@@ -40,6 +42,13 @@ export default function EntregasPage() {
     }
   }, [user, authLoading, router]);
 
+  // Auto-load vehicles when form is shown
+  useEffect(() => {
+    if (showForm && selectedDate) {
+      loadOperacionesPorFecha(selectedDate);
+    }
+  }, [showForm, selectedDate]);
+
   const loadData = async () => {
     try {
       const params = selectedVehiculoId
@@ -54,12 +63,26 @@ export default function EntregasPage() {
     }
   };
 
-  const loadVehiculosForOperacion = async (operacionId: number) => {
+  const loadOperacionesPorFecha = async (fecha: string) => {
     try {
-      const data = await operacionesApi.listVehiculos(operacionId);
-      setVehiculos(data);
+      // Cargar operaciones del día seleccionado
+      const ops = await operacionesApi.list({
+        fecha_inicio: fecha,
+        fecha_fin: fecha
+      });
+      setOperaciones(ops);
+
+      // Cargar vehículos de todas las operaciones del día
+      const todosVehiculos: VehiculoOperacion[] = [];
+      for (const op of ops) {
+        const vehs = await operacionesApi.listVehiculos(op.id);
+        todosVehiculos.push(...vehs);
+      }
+      setVehiculos(todosVehiculos);
     } catch (error) {
-      console.error('Error loading vehiculos:', error);
+      console.error('Error loading operaciones:', error);
+      setOperaciones([]);
+      setVehiculos([]);
     }
   };
 
@@ -170,6 +193,25 @@ export default function EntregasPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
+                  Fecha de Operación *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={selectedDate}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    setFormData({ ...formData, fecha_operacion: e.target.value });
+                  }}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Se cargarán los vehículos de las operaciones de esta fecha
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
                   Vehículo (Placa) *
                 </label>
                 <select
@@ -178,25 +220,30 @@ export default function EntregasPage() {
                   onChange={(e) => setSelectedVehiculoId(parseInt(e.target.value))}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
                 >
-                  <option value="">Seleccione un vehículo</option>
+                  <option value="">
+                    {vehiculos.length === 0
+                      ? 'No hay vehículos en operación para esta fecha'
+                      : 'Seleccione un vehículo'}
+                  </option>
                   {vehiculos.map((v) => (
                     <option key={v.id} value={v.id}>
-                      {v.placa}
+                      {v.placa} - Operación #{v.operacion_id} - Inicio: {v.hora_inicio || 'Sin hora'}
                     </option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const operacionId = prompt('Ingrese ID de operación:');
-                    if (operacionId) {
-                      await loadVehiculosForOperacion(parseInt(operacionId));
-                    }
-                  }}
-                  className="mt-2 text-sm text-primary-600 hover:text-primary-900"
-                >
-                  Cargar vehículos de operación
-                </button>
+                {vehiculos.length === 0 && (
+                  <p className="mt-1 text-sm text-yellow-600">
+                    ⚠️ No hay vehículos en operación para {selectedDate}.
+                    <a href="/operaciones" className="text-primary-600 hover:underline ml-1">
+                      Crear operación primero
+                    </a>
+                  </p>
+                )}
+                {vehiculos.length > 0 && (
+                  <p className="mt-1 text-xs text-green-600">
+                    ✓ {vehiculos.length} vehículo(s) disponible(s)
+                  </p>
+                )}
               </div>
 
               <div>
@@ -225,21 +272,6 @@ export default function EntregasPage() {
                     setFormData({ ...formData, cliente: e.target.value })
                   }
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Fecha de Operación *
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={formData.fecha_operacion}
-                  onChange={(e) =>
-                    setFormData({ ...formData, fecha_operacion: e.target.value })
-                  }
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
                 />
               </div>
 

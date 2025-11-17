@@ -7,7 +7,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import { operacionesApi } from '@/lib/api';
 import type { OperacionDiaria, VehiculoOperacion } from '@/types';
-import { FiPlus, FiEye, FiDownload } from 'react-icons/fi';
+import { FiPlus, FiEye, FiDownload, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { useExportToExcel } from '@/hooks/useExportToExcel';
 
 export default function OperacionesPage() {
@@ -17,6 +17,7 @@ export default function OperacionesPage() {
   const [operaciones, setOperaciones] = useState<OperacionDiaria[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     fecha_operacion: new Date().toISOString().split('T')[0],
     cantidad_vehiculos_solicitados: 1,
@@ -45,8 +46,13 @@ export default function OperacionesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await operacionesApi.create(formData);
+      if (editingId) {
+        await operacionesApi.update(editingId, formData);
+      } else {
+        await operacionesApi.create(formData);
+      }
       setShowForm(false);
+      setEditingId(null);
       setFormData({
         fecha_operacion: new Date().toISOString().split('T')[0],
         cantidad_vehiculos_solicitados: 1,
@@ -54,8 +60,32 @@ export default function OperacionesPage() {
       });
       loadOperaciones();
     } catch (error) {
-      console.error('Error creating operacion:', error);
-      alert('Error al crear la operación');
+      console.error('Error saving operacion:', error);
+      alert(editingId ? 'Error al actualizar la operación' : 'Error al crear la operación');
+    }
+  };
+
+  const handleEdit = (operacion: OperacionDiaria) => {
+    setFormData({
+      fecha_operacion: operacion.fecha_operacion,
+      cantidad_vehiculos_solicitados: operacion.cantidad_vehiculos_solicitados,
+      observacion: operacion.observacion || '',
+    });
+    setEditingId(operacion.id);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('¿Está seguro de eliminar esta operación? Esta acción no se puede deshacer.')) {
+      return;
+    }
+    try {
+      await operacionesApi.delete(id);
+      loadOperaciones();
+      alert('Operación eliminada exitosamente');
+    } catch (error: any) {
+      const message = error?.response?.data?.detail || 'Error al eliminar la operación';
+      alert(message);
     }
   };
 
@@ -108,9 +138,9 @@ export default function OperacionesPage() {
           </div>
         </div>
 
-        {/* Create Form */}
+        {/* Create/Edit Form */}
         {showForm && (
-          <Card title="Nueva Operación Diaria">
+          <Card title={editingId ? "Editar Operación Diaria" : "Nueva Operación Diaria"}>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -182,7 +212,7 @@ export default function OperacionesPage() {
                   type="submit"
                   className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500"
                 >
-                  Crear Operación
+                  {editingId ? 'Actualizar Operación' : 'Crear Operación'}
                 </button>
               </div>
             </form>
@@ -234,13 +264,26 @@ export default function OperacionesPage() {
                         <td className="px-4 lg:px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                           {operacion.observacion || '-'}
                         </td>
-                        <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm font-medium">
+                        <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm font-medium space-x-3">
                           <button
                             onClick={() => router.push(`/operaciones/${operacion.id}`)}
                             className="text-primary-600 hover:text-primary-900 inline-flex items-center"
                           >
-                            <FiEye className="mr-1 h-4 w-4" />
-                            Ver
+                            <FiEye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(operacion)}
+                            className="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                            title="Editar"
+                          >
+                            <FiEdit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(operacion.id)}
+                            className="text-red-600 hover:text-red-900 inline-flex items-center"
+                            title="Eliminar"
+                          >
+                            <FiTrash2 className="h-4 w-4" />
                           </button>
                         </td>
                       </tr>
@@ -266,13 +309,28 @@ export default function OperacionesPage() {
                     {operacion.observacion && (
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">{operacion.observacion}</p>
                     )}
-                    <button
-                      onClick={() => router.push(`/operaciones/${operacion.id}`)}
-                      className="w-full inline-flex items-center justify-center rounded-md bg-primary-50 px-3 py-2 text-sm font-semibold text-primary-600 hover:bg-primary-100"
-                    >
-                      <FiEye className="mr-2 h-4 w-4" />
-                      Ver Detalles
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => router.push(`/operaciones/${operacion.id}`)}
+                        className="flex-1 inline-flex items-center justify-center rounded-md bg-primary-50 px-3 py-2 text-sm font-semibold text-primary-600 hover:bg-primary-100"
+                      >
+                        <FiEye className="mr-2 h-4 w-4" />
+                        Ver
+                      </button>
+                      <button
+                        onClick={() => handleEdit(operacion)}
+                        className="flex-1 inline-flex items-center justify-center rounded-md bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-100"
+                      >
+                        <FiEdit2 className="mr-2 h-4 w-4" />
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleDelete(operacion.id)}
+                        className="inline-flex items-center justify-center rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-100"
+                      >
+                        <FiTrash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
