@@ -5,14 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
-import { vehiculosApi } from '@/lib/api';
-import type { Vehiculo, VehiculoCreate } from '@/types';
+import { vehiculosApi, tiposVehiculoApi } from '@/lib/api';
+import type { Vehiculo, VehiculoCreate, TipoVehiculo } from '@/types';
 import { FiPlus, FiEdit2, FiTrash2, FiTruck } from 'react-icons/fi';
 
 export default function VehiculosPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
+  const [tiposVehiculo, setTiposVehiculo] = useState<TipoVehiculo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -21,7 +22,7 @@ export default function VehiculosPage() {
     marca: '',
     modelo: '',
     anio: new Date().getFullYear(),
-    tipo: '',
+    tipo_vehiculo_id: undefined,
     estado: 'disponible',
     conductor_asignado: '',
     observaciones: '',
@@ -31,16 +32,20 @@ export default function VehiculosPage() {
     if (!authLoading && !user) {
       router.push('/login');
     } else if (user) {
-      loadVehiculos();
+      loadData();
     }
   }, [user, authLoading, router]);
 
-  const loadVehiculos = async () => {
+  const loadData = async () => {
     try {
-      const data = await vehiculosApi.list({ activo: true });
-      setVehiculos(data);
+      const [vehiculosData, tiposData] = await Promise.all([
+        vehiculosApi.list({ activo: true }),
+        tiposVehiculoApi.list({ estado: 'activo' }),
+      ]);
+      setVehiculos(vehiculosData);
+      setTiposVehiculo(tiposData);
     } catch (error) {
-      console.error('Error loading vehiculos:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
@@ -57,7 +62,7 @@ export default function VehiculosPage() {
       setShowForm(false);
       setEditingId(null);
       resetForm();
-      loadVehiculos();
+      loadData();
     } catch (error: any) {
       console.error('Error saving vehiculo:', error);
       const message = error?.response?.data?.detail || 'Error al guardar el vehículo';
@@ -71,7 +76,7 @@ export default function VehiculosPage() {
       marca: vehiculo.marca || '',
       modelo: vehiculo.modelo || '',
       anio: vehiculo.anio,
-      tipo: vehiculo.tipo || '',
+      tipo_vehiculo_id: vehiculo.tipo_vehiculo_id,
       estado: vehiculo.estado,
       conductor_asignado: vehiculo.conductor_asignado || '',
       observaciones: vehiculo.observaciones || '',
@@ -86,7 +91,7 @@ export default function VehiculosPage() {
     }
     try {
       await vehiculosApi.delete(id);
-      loadVehiculos();
+      loadData();
     } catch (error) {
       console.error('Error deleting vehiculo:', error);
       alert('Error al eliminar el vehículo');
@@ -99,7 +104,7 @@ export default function VehiculosPage() {
       marca: '',
       modelo: '',
       anio: new Date().getFullYear(),
-      tipo: '',
+      tipo_vehiculo_id: undefined,
       estado: 'disponible',
       conductor_asignado: '',
       observaciones: '',
@@ -107,24 +112,20 @@ export default function VehiculosPage() {
     setEditingId(null);
   };
 
+  const getTipoNombre = (tipoId?: number) => {
+    if (!tipoId) return '-';
+    const tipo = tiposVehiculo.find(t => t.id === tipoId);
+    return tipo?.descripcion || '-';
+  };
+
   const getEstadoBadge = (estado: string) => {
-    const badges = {
-      disponible: 'bg-green-100 text-green-800',
-      en_operacion: 'bg-blue-100 text-blue-800',
-      mantenimiento: 'bg-yellow-100 text-yellow-800',
-      inactivo: 'bg-gray-100 text-gray-800',
-    };
-    return badges[estado as keyof typeof badges] || 'bg-gray-100 text-gray-800';
+    return estado === 'disponible'
+      ? 'bg-green-100 text-green-800'
+      : 'bg-gray-100 text-gray-800';
   };
 
   const getEstadoLabel = (estado: string) => {
-    const labels = {
-      disponible: 'Disponible',
-      en_operacion: 'En Operación',
-      mantenimiento: 'Mantenimiento',
-      inactivo: 'Inactivo',
-    };
-    return labels[estado as keyof typeof labels] || estado;
+    return estado === 'disponible' ? 'Disponible' : 'Inactivo';
   };
 
   if (authLoading || loading) {
@@ -182,6 +183,29 @@ export default function VehiculosPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
+                    Tipo de Vehículo
+                  </label>
+                  <select
+                    value={formData.tipo_vehiculo_id || ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        tipo_vehiculo_id: e.target.value ? parseInt(e.target.value) : undefined,
+                      })
+                    }
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
+                  >
+                    <option value="">Seleccione un tipo</option>
+                    {tiposVehiculo.map((tipo) => (
+                      <option key={tipo.id} value={tipo.id}>
+                        {tipo.descripcion}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
                     Marca
                   </label>
                   <input
@@ -228,26 +252,6 @@ export default function VehiculosPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Tipo
-                  </label>
-                  <select
-                    value={formData.tipo}
-                    onChange={(e) =>
-                      setFormData({ ...formData, tipo: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
-                  >
-                    <option value="">Seleccione un tipo</option>
-                    <option value="Camioneta">Camioneta</option>
-                    <option value="Camión">Camión</option>
-                    <option value="Furgón">Furgón</option>
-                    <option value="Automóvil">Automóvil</option>
-                    <option value="Motocicleta">Motocicleta</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
                     Estado *
                   </label>
                   <select
@@ -259,8 +263,6 @@ export default function VehiculosPage() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
                   >
                     <option value="disponible">Disponible</option>
-                    <option value="en_operacion">En Operación</option>
-                    <option value="mantenimiento">Mantenimiento</option>
                     <option value="inactivo">Inactivo</option>
                   </select>
                 </div>
@@ -338,13 +340,13 @@ export default function VehiculosPage() {
                       Placa
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      Tipo
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                       Marca/Modelo
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                       Año
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Tipo
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                       Estado
@@ -364,15 +366,15 @@ export default function VehiculosPage() {
                         {vehiculo.placa}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                        {getTipoNombre(vehiculo.tipo_vehiculo_id)}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                         {vehiculo.marca && vehiculo.modelo
                           ? `${vehiculo.marca} ${vehiculo.modelo}`
                           : vehiculo.marca || vehiculo.modelo || '-'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                         {vehiculo.anio || '-'}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {vehiculo.tipo || '-'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm">
                         <span
