@@ -1,7 +1,16 @@
--- Schema para el sistema de gestión de vehículos y entregas
--- La base de datos ya se crea con la variable POSTGRES_DB en docker-compose
+-- ================================
+-- SCRIPT DE MIGRACIÓN A SISTEMA RBAC
+-- ================================
+-- Este script actualiza la base de datos existente agregando:
+-- - Nuevas tablas para RBAC (roles, pages, permisos_rol, permisos_usuario)
+-- - Nuevas columnas a la tabla usuarios
+-- - Datos iniciales necesarios
 
--- Tabla de roles para RBAC
+-- Ejecutar este script si ya tienes una base de datos creada y necesitas agregarle RBAC
+
+BEGIN;
+
+-- 1. Crear tabla de roles si no existe
 CREATE TABLE IF NOT EXISTS roles (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(50) UNIQUE NOT NULL,
@@ -10,7 +19,7 @@ CREATE TABLE IF NOT EXISTS roles (
     fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de páginas para control de acceso
+-- 2. Crear tabla de páginas si no existe
 CREATE TABLE IF NOT EXISTS pages (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(50) UNIQUE NOT NULL,
@@ -22,22 +31,77 @@ CREATE TABLE IF NOT EXISTS pages (
     fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de usuarios para autenticación (actualizada con RBAC)
-CREATE TABLE IF NOT EXISTS usuarios (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    nombre_completo VARCHAR(100),
-    email VARCHAR(255) UNIQUE,
-    numero_celular VARCHAR(20),
-    rol_id INTEGER REFERENCES roles(id),
-    creado_por INTEGER REFERENCES usuarios(id),
-    activo BOOLEAN DEFAULT TRUE,
-    fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    fecha_actualizacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+-- 3. Agregar nuevas columnas a la tabla usuarios si no existen
+DO $$
+BEGIN
+    -- Agregar columna numero_celular
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'usuarios' AND column_name = 'numero_celular'
+    ) THEN
+        ALTER TABLE usuarios ADD COLUMN numero_celular VARCHAR(20);
+    END IF;
 
--- Tabla de permisos por rol
+    -- Agregar columna rol_id (sin constraint por ahora)
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'usuarios' AND column_name = 'rol_id'
+    ) THEN
+        ALTER TABLE usuarios ADD COLUMN rol_id INTEGER;
+    END IF;
+
+    -- Agregar columna creado_por (sin constraint por ahora)
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'usuarios' AND column_name = 'creado_por'
+    ) THEN
+        ALTER TABLE usuarios ADD COLUMN creado_por INTEGER;
+    END IF;
+
+    -- Renombrar columnas de fecha si existen con nombres antiguos
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'usuarios' AND column_name = 'created_at'
+    ) THEN
+        ALTER TABLE usuarios RENAME COLUMN created_at TO fecha_creacion;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'usuarios' AND column_name = 'updated_at'
+    ) THEN
+        ALTER TABLE usuarios RENAME COLUMN updated_at TO fecha_actualizacion;
+    END IF;
+
+    -- Si no existe fecha_creacion, crearla
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'usuarios' AND column_name = 'fecha_creacion'
+    ) THEN
+        ALTER TABLE usuarios ADD COLUMN fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+    END IF;
+
+    -- Si no existe fecha_actualizacion, crearla
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'usuarios' AND column_name = 'fecha_actualizacion'
+    ) THEN
+        ALTER TABLE usuarios ADD COLUMN fecha_actualizacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+    END IF;
+
+    -- Modificar el tipo de columna email para que sea UNIQUE
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints tc
+        WHERE tc.table_name = 'usuarios'
+        AND tc.constraint_type = 'UNIQUE'
+        AND tc.constraint_name LIKE '%email%'
+    ) THEN
+        ALTER TABLE usuarios ALTER COLUMN email TYPE VARCHAR(255);
+        ALTER TABLE usuarios ADD CONSTRAINT usuarios_email_key UNIQUE (email);
+    END IF;
+END $$;
+
+-- 4. Crear tabla de permisos por rol si no existe
 CREATE TABLE IF NOT EXISTS permisos_rol (
     id SERIAL PRIMARY KEY,
     rol_id INTEGER REFERENCES roles(id) ON DELETE CASCADE NOT NULL,
@@ -50,7 +114,7 @@ CREATE TABLE IF NOT EXISTS permisos_rol (
     UNIQUE(rol_id, page_id)
 );
 
--- Tabla de permisos específicos por usuario (sobrescriben permisos del rol)
+-- 5. Crear tabla de permisos específicos por usuario si no existe
 CREATE TABLE IF NOT EXISTS permisos_usuario (
     id SERIAL PRIMARY KEY,
     usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE NOT NULL,
@@ -64,57 +128,29 @@ CREATE TABLE IF NOT EXISTS permisos_usuario (
     UNIQUE(usuario_id, page_id)
 );
 
--- Tabla de operaciones diarias (captura de vehículos necesarios)
-CREATE TABLE IF NOT EXISTS operaciones_diarias (
-    id SERIAL PRIMARY KEY,
-    fecha_operacion DATE NOT NULL,
-    cantidad_vehiculos_solicitados INTEGER NOT NULL,
-    observacion TEXT,
-    usuario_id INTEGER REFERENCES usuarios(id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- 6. Agregar constraints de foreign key a usuarios si no existen
+DO $$
+BEGIN
+    -- Agregar FK constraint para rol_id
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name = 'usuarios' AND constraint_name = 'usuarios_rol_id_fkey'
+    ) THEN
+        ALTER TABLE usuarios ADD CONSTRAINT usuarios_rol_id_fkey
+        FOREIGN KEY (rol_id) REFERENCES roles(id);
+    END IF;
 
--- Tabla de vehículos que iniciaron operación
-CREATE TABLE IF NOT EXISTS vehiculos_operacion (
-    id SERIAL PRIMARY KEY,
-    operacion_id INTEGER REFERENCES operaciones_diarias(id) ON DELETE CASCADE,
-    placa VARCHAR(20) NOT NULL,
-    hora_inicio TIME,
-    observacion TEXT,
-    activo BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(operacion_id, placa)
-);
+    -- Agregar FK constraint para creado_por
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name = 'usuarios' AND constraint_name = 'usuarios_creado_por_fkey'
+    ) THEN
+        ALTER TABLE usuarios ADD CONSTRAINT usuarios_creado_por_fkey
+        FOREIGN KEY (creado_por) REFERENCES usuarios(id);
+    END IF;
+END $$;
 
--- Tabla de entregas/facturas por vehículo
-CREATE TABLE IF NOT EXISTS entregas (
-    id SERIAL PRIMARY KEY,
-    vehiculo_operacion_id INTEGER REFERENCES vehiculos_operacion(id) ON DELETE CASCADE,
-    numero_factura VARCHAR(50) NOT NULL,
-    cliente VARCHAR(200),
-    observacion TEXT,
-    estado VARCHAR(20) DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'cumplido')),
-    fecha_operacion DATE NOT NULL,
-    fecha_cumplido TIMESTAMP,
-    usuario_cumplido_id INTEGER REFERENCES usuarios(id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Tabla de fotos de evidencia de cumplimiento
-CREATE TABLE IF NOT EXISTS fotos_evidencia (
-    id SERIAL PRIMARY KEY,
-    entrega_id INTEGER REFERENCES entregas(id) ON DELETE CASCADE,
-    ruta_archivo VARCHAR(500) NOT NULL,
-    nombre_archivo VARCHAR(200),
-    tipo_mime VARCHAR(100),
-    tamano_bytes INTEGER,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Índices para mejorar el rendimiento
+-- 7. Crear índices para mejorar el rendimiento
 CREATE INDEX IF NOT EXISTS idx_usuarios_username ON usuarios(username);
 CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
 CREATE INDEX IF NOT EXISTS idx_usuarios_rol_id ON usuarios(rol_id);
@@ -125,15 +161,8 @@ CREATE INDEX IF NOT EXISTS idx_permisos_rol_rol_id ON permisos_rol(rol_id);
 CREATE INDEX IF NOT EXISTS idx_permisos_rol_page_id ON permisos_rol(page_id);
 CREATE INDEX IF NOT EXISTS idx_permisos_usuario_usuario_id ON permisos_usuario(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_permisos_usuario_page_id ON permisos_usuario(page_id);
-CREATE INDEX IF NOT EXISTS idx_operaciones_fecha ON operaciones_diarias(fecha_operacion);
-CREATE INDEX IF NOT EXISTS idx_vehiculos_placa ON vehiculos_operacion(placa);
-CREATE INDEX IF NOT EXISTS idx_entregas_estado ON entregas(estado);
-CREATE INDEX IF NOT EXISTS idx_entregas_fecha_operacion ON entregas(fecha_operacion);
-CREATE INDEX IF NOT EXISTS idx_entregas_fecha_cumplido ON entregas(fecha_cumplido);
-CREATE INDEX IF NOT EXISTS idx_vehiculo_operacion ON vehiculos_operacion(operacion_id);
-CREATE INDEX IF NOT EXISTS idx_entregas_vehiculo ON entregas(vehiculo_operacion_id);
 
--- Trigger para actualizar fecha_actualizacion automáticamente
+-- 8. Crear/actualizar función y triggers para fecha_actualizacion
 CREATE OR REPLACE FUNCTION update_fecha_actualizacion_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -142,36 +171,15 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Triggers para tablas que tienen fecha_actualizacion
+DROP TRIGGER IF EXISTS update_usuarios_fecha_actualizacion ON usuarios;
 CREATE TRIGGER update_usuarios_fecha_actualizacion BEFORE UPDATE ON usuarios
     FOR EACH ROW EXECUTE FUNCTION update_fecha_actualizacion_column();
 
+DROP TRIGGER IF EXISTS update_permisos_usuario_fecha_actualizacion ON permisos_usuario;
 CREATE TRIGGER update_permisos_usuario_fecha_actualizacion BEFORE UPDATE ON permisos_usuario
     FOR EACH ROW EXECUTE FUNCTION update_fecha_actualizacion_column();
 
--- Trigger para actualizar updated_at en tablas legacy
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER update_operaciones_updated_at BEFORE UPDATE ON operaciones_diarias
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_vehiculos_updated_at BEFORE UPDATE ON vehiculos_operacion
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_entregas_updated_at BEFORE UPDATE ON entregas
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- ================================
--- DATOS INICIALES DEL SISTEMA
--- ================================
-
--- 1. Roles del sistema
+-- 9. Insertar roles del sistema
 INSERT INTO roles (nombre, descripcion, activo) VALUES
     ('Administrador', 'Acceso completo al sistema', TRUE),
     ('Supervisor', 'Supervisión y aprobación de operaciones', TRUE),
@@ -179,7 +187,7 @@ INSERT INTO roles (nombre, descripcion, activo) VALUES
     ('Solo Lectura', 'Solo puede ver información sin editar', TRUE)
 ON CONFLICT (nombre) DO NOTHING;
 
--- 2. Páginas del sistema
+-- 10. Insertar páginas del sistema
 INSERT INTO pages (nombre, nombre_display, ruta, icono, orden, activo) VALUES
     ('dashboard', 'Dashboard', '/', 'FaTachometerAlt', 1, TRUE),
     ('operaciones', 'Operaciones Diarias', '/operaciones', 'FaTruck', 2, TRUE),
@@ -189,7 +197,7 @@ INSERT INTO pages (nombre, nombre_display, ruta, icono, orden, activo) VALUES
     ('reportes', 'Reportes', '/reportes', 'FaChartBar', 6, TRUE)
 ON CONFLICT (nombre) DO NOTHING;
 
--- 3. Permisos para el rol Administrador (acceso completo a todo)
+-- 11. Permisos para el rol Administrador (acceso completo a todo)
 INSERT INTO permisos_rol (rol_id, page_id, puede_ver, puede_crear, puede_editar, puede_eliminar)
 SELECT
     r.id,
@@ -203,7 +211,7 @@ CROSS JOIN pages p
 WHERE r.nombre = 'Administrador'
 ON CONFLICT (rol_id, page_id) DO NOTHING;
 
--- 4. Permisos para el rol Supervisor
+-- 12. Permisos para el rol Supervisor
 INSERT INTO permisos_rol (rol_id, page_id, puede_ver, puede_crear, puede_editar, puede_eliminar)
 SELECT
     r.id,
@@ -217,7 +225,7 @@ CROSS JOIN pages p
 WHERE r.nombre = 'Supervisor'
 ON CONFLICT (rol_id, page_id) DO NOTHING;
 
--- 5. Permisos para el rol Operador
+-- 13. Permisos para el rol Operador
 INSERT INTO permisos_rol (rol_id, page_id, puede_ver, puede_crear, puede_editar, puede_eliminar)
 SELECT
     r.id,
@@ -231,7 +239,7 @@ CROSS JOIN pages p
 WHERE r.nombre = 'Operador' AND p.nombre NOT IN ('usuarios', 'roles')
 ON CONFLICT (rol_id, page_id) DO NOTHING;
 
--- 6. Permisos para el rol Solo Lectura
+-- 14. Permisos para el rol Solo Lectura
 INSERT INTO permisos_rol (rol_id, page_id, puede_ver, puede_crear, puede_editar, puede_eliminar)
 SELECT
     r.id,
@@ -245,9 +253,12 @@ CROSS JOIN pages p
 WHERE r.nombre = 'Solo Lectura' AND p.nombre NOT IN ('usuarios', 'roles')
 ON CONFLICT (rol_id, page_id) DO NOTHING;
 
--- 7. Usuario administrador por defecto
--- Hash generado con bcrypt para la contraseña 'admin123'
--- Credenciales: username: admin, password: admin123
+-- 15. Actualizar usuarios existentes sin rol para asignarles rol de Operador
+UPDATE usuarios
+SET rol_id = (SELECT id FROM roles WHERE nombre = 'Operador')
+WHERE rol_id IS NULL AND username != 'admin';
+
+-- 16. Actualizar/crear usuario administrador
 INSERT INTO usuarios (username, password_hash, nombre_completo, email, rol_id, activo)
 SELECT
     'admin',
@@ -261,4 +272,14 @@ WHERE r.nombre = 'Administrador'
 ON CONFLICT (username) DO UPDATE SET
     password_hash = EXCLUDED.password_hash,
     rol_id = EXCLUDED.rol_id,
+    nombre_completo = EXCLUDED.nombre_completo,
     activo = EXCLUDED.activo;
+
+COMMIT;
+
+-- Verificar la migración
+SELECT 'Migración completada exitosamente!' as mensaje;
+SELECT 'Roles creados:' as info, COUNT(*) as cantidad FROM roles;
+SELECT 'Páginas creadas:' as info, COUNT(*) as cantidad FROM pages;
+SELECT 'Usuarios actualizados:' as info, COUNT(*) as cantidad FROM usuarios;
+SELECT 'Permisos de rol creados:' as info, COUNT(*) as cantidad FROM permisos_rol;
