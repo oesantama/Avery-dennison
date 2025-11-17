@@ -10,6 +10,9 @@ import type {
   Vehiculo,
   VehiculoCreate,
   VehiculoUpdate,
+  TipoVehiculo,
+  TipoVehiculoCreate,
+  TipoVehiculoUpdate,
   Entrega,
   EntregaCreate,
   EntregaUpdate,
@@ -141,6 +144,37 @@ export const vehiculosApi = {
 
   delete: async (id: number): Promise<void> => {
     await api.delete(`/api/vehiculos/${id}`);
+  },
+};
+
+// Tipos de Vehículo APIs
+export const tiposVehiculoApi = {
+  create: async (data: TipoVehiculoCreate): Promise<TipoVehiculo> => {
+    const response = await api.post<TipoVehiculo>('/api/maestros/tipos-vehiculo/', data);
+    return response.data;
+  },
+
+  list: async (params?: {
+    skip?: number;
+    limit?: number;
+    estado?: string;
+  }): Promise<TipoVehiculo[]> => {
+    const response = await api.get<TipoVehiculo[]>('/api/maestros/tipos-vehiculo/', { params });
+    return response.data;
+  },
+
+  get: async (id: number): Promise<TipoVehiculo> => {
+    const response = await api.get<TipoVehiculo>(`/api/maestros/tipos-vehiculo/${id}`);
+    return response.data;
+  },
+
+  update: async (id: number, data: TipoVehiculoUpdate): Promise<TipoVehiculo> => {
+    const response = await api.put<TipoVehiculo>(`/api/maestros/tipos-vehiculo/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/maestros/tipos-vehiculo/${id}`);
   },
 };
 
