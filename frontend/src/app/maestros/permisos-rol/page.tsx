@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
+import DataTable, { Column } from '@/components/ui/DataTable';
 import { permisosRolApi, rolesApi, pagesApi } from '@/lib/api';
 import type { PermisoRol, PermisoRolCreate, Rol, Page } from '@/types';
-import { FiPlus, FiEdit2, FiTrash2, FiShield } from 'react-icons/fi';
+import { FiPlus, FiShield } from 'react-icons/fi';
 
 export default function PermisosRolPage() {
   const router = useRouter();
@@ -136,6 +137,80 @@ export default function PermisosRolPage() {
   const getEstadoLabel = (estado: string) => {
     return estado === 'activo' ? 'Activo' : 'Inactivo';
   };
+
+  // Definir columnas de la tabla
+  const columns: Column<PermisoRol>[] = [
+    {
+      key: 'rol_id',
+      label: 'Rol',
+      sortable: true,
+      render: (permiso) => getRolNombre(permiso.rol_id),
+    },
+    {
+      key: 'page_id',
+      label: 'Página',
+      sortable: true,
+      render: (permiso) => getPageNombre(permiso.page_id),
+    },
+    {
+      key: 'puede_ver',
+      label: 'Ver',
+      sortable: true,
+      render: (permiso) =>
+        permiso.puede_ver ? (
+          <span className="text-green-600">✓</span>
+        ) : (
+          <span className="text-gray-300">-</span>
+        ),
+    },
+    {
+      key: 'puede_crear',
+      label: 'Crear',
+      sortable: true,
+      render: (permiso) =>
+        permiso.puede_crear ? (
+          <span className="text-green-600">✓</span>
+        ) : (
+          <span className="text-gray-300">-</span>
+        ),
+    },
+    {
+      key: 'puede_editar',
+      label: 'Editar',
+      sortable: true,
+      render: (permiso) =>
+        permiso.puede_editar ? (
+          <span className="text-green-600">✓</span>
+        ) : (
+          <span className="text-gray-300">-</span>
+        ),
+    },
+    {
+      key: 'puede_borrar',
+      label: 'Borrar',
+      sortable: true,
+      render: (permiso) =>
+        permiso.puede_borrar ? (
+          <span className="text-green-600">✓</span>
+        ) : (
+          <span className="text-gray-300">-</span>
+        ),
+    },
+    {
+      key: 'estado',
+      label: 'Estado',
+      sortable: true,
+      render: (permiso) => (
+        <span
+          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getEstadoBadge(
+            permiso.estado
+          )}`}
+        >
+          {getEstadoLabel(permiso.estado)}
+        </span>
+      ),
+    },
+  ];
 
   if (authLoading || loading) {
     return (
@@ -333,113 +408,15 @@ export default function PermisosRolPage() {
 
         {/* Permisos List */}
         <Card title="Lista de Permisos por Rol">
-          {permisos.length === 0 ? (
-            <div className="text-center py-12">
-              <FiShield className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No hay permisos configurados
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Comience asignando permisos a los roles.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Rol
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Página
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Ver
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Crear
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Editar
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Borrar
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Estado
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {permisos.map((permiso) => (
-                    <tr key={permiso.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                        {getRolNombre(permiso.rol_id)}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {getPageNombre(permiso.page_id)}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-center">
-                        {permiso.puede_ver ? (
-                          <span className="text-green-600">✓</span>
-                        ) : (
-                          <span className="text-gray-300">-</span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-center">
-                        {permiso.puede_crear ? (
-                          <span className="text-green-600">✓</span>
-                        ) : (
-                          <span className="text-gray-300">-</span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-center">
-                        {permiso.puede_editar ? (
-                          <span className="text-green-600">✓</span>
-                        ) : (
-                          <span className="text-gray-300">-</span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-center">
-                        {permiso.puede_borrar ? (
-                          <span className="text-green-600">✓</span>
-                        ) : (
-                          <span className="text-gray-300">-</span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm">
-                        <span
-                          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getEstadoBadge(
-                            permiso.estado
-                          )}`}
-                        >
-                          {getEstadoLabel(permiso.estado)}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium space-x-3">
-                        <button
-                          onClick={() => handleEdit(permiso)}
-                          className="text-primary-600 hover:text-primary-900 inline-flex items-center"
-                        >
-                          <FiEdit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(permiso.id)}
-                          className="text-red-600 hover:text-red-900 inline-flex items-center"
-                        >
-                          <FiTrash2 className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <DataTable
+            data={permisos}
+            columns={columns}
+            onEdit={handleEdit}
+            onDelete={(permiso) => handleDelete(permiso.id)}
+            emptyMessage="No hay permisos configurados"
+            emptyIcon={<FiShield className="mx-auto h-12 w-12 text-gray-400" />}
+            searchPlaceholder="Buscar permiso..."
+          />
         </Card>
       </div>
     </DashboardLayout>
