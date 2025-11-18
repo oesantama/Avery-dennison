@@ -93,10 +93,11 @@ export interface Entrega {
   numero_factura: string;
   cliente?: string;
   observacion?: string;
-  estado: 'pendiente' | 'cumplido';
+  estado: 'pendiente' | 'cumplido' | 'no_cumplido';
   fecha_operacion: string;
   fecha_cumplido?: string;
   usuario_cumplido_id?: number;
+  usuario_cumplido_nombre?: string;
   created_at: string;
   fotos: FotoEvidencia[];
 }
@@ -110,7 +111,7 @@ export interface EntregaCreate {
 }
 
 export interface EntregaUpdate {
-  estado?: 'pendiente' | 'cumplido';
+  estado?: 'pendiente' | 'cumplido' | 'no_cumplido';
   observacion?: string;
 }
 

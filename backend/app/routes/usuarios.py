@@ -94,6 +94,7 @@ def crear_usuario(
 ):
     """
     Crea un nuevo usuario.
+    Los permisos se asignan desde el frontend mediante el endpoint /api/permisos-usuario/usuario/{id}/bulk
     Solo usuarios con rol 'Administrador' pueden crear usuarios.
     """
     # Verificar que el username no exista
@@ -285,4 +286,42 @@ def desbloquear_usuario(
         "usuario_id": usuario_id,
         "intentos_fallidos": 0,
         "bloqueado_hasta": None
+    }
+
+@router.post("/{usuario_id}/change-password", status_code=status.HTTP_200_OK)
+def cambiar_contrasena(
+    usuario_id: int,
+    passwords: dict,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    """
+    Permite a un usuario cambiar su propia contraseña.
+    """
+    from app.auth import verify_password
+    
+    # Solo puede cambiar su propia contraseña o admin puede cambiar cualquiera
+    if current_user.id != usuario_id and not AuthorizationService.is_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tiene permisos para cambiar esta contraseña"
+        )
+
+    db_usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not db_usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # Verificar contraseña actual
+    if not verify_password(passwords.get("current_password", ""), db_usuario.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Contraseña actual incorrecta"
+        )
+
+    # Actualizar contraseña
+    db_usuario.hashed_password = get_password_hash(passwords["new_password"])
+    db.commit()
+
+    return {
+        "message": "Contraseña actualizada exitosamente"
     }

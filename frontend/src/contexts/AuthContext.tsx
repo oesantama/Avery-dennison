@@ -95,12 +95,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const userData = await authApi.me();
       setUser(userData);
-      // ✅ Guardar en caché inmediatamente
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('cachedUser', JSON.stringify(userData));
-        localStorage.setItem('lastAuthCheck', Date.now().toString());
+      
+      // ✅ CORREGIDO: Obtener permisos y redirigir a la primera página permitida
+      try {
+        const permissionsData = await authApi.getMyPermissions();
+        const allowedPages = permissionsData.pages || [];
+        
+        // ✅ Guardar en caché
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('cachedUser', JSON.stringify(userData));
+          localStorage.setItem('lastAuthCheck', Date.now().toString());
+        }
+        
+        // ✅ Orden de prioridad para redirección
+        const priorityPages = ['/dashboard', '/operaciones', '/consultas/entregas', '/vehiculos'];
+        const redirectPage = priorityPages.find(page => allowedPages.includes(page)) || allowedPages[0] || '/dashboard';
+        
+        router.push(redirectPage);
+      } catch (permError) {
+        console.error('Error obteniendo permisos:', permError);
+        // Si falla obtener permisos, intentar dashboard por defecto
+        router.push('/dashboard');
       }
-      router.push('/dashboard');
     } catch (error) {
       throw new Error('Credenciales inválidas');
     }

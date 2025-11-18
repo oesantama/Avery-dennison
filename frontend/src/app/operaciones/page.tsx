@@ -9,6 +9,7 @@ import type { OperacionDiaria } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FiDownload, FiEye, FiPlus, FiSearch } from 'react-icons/fi';
+import { formatDateColombian } from '@/utils/dateFormat';
 
 export default function OperacionesPage() {
   const router = useRouter();
@@ -17,7 +18,11 @@ export default function OperacionesPage() {
   const [operaciones, setOperaciones] = useState<OperacionDiaria[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Filtros
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+  const [placa, setPlaca] = useState('');
 
   // Helper function to get local date without timezone conversion
   const getLocalDateString = () => {
@@ -44,13 +49,31 @@ export default function OperacionesPage() {
 
   const loadOperaciones = async () => {
     try {
-      const data = await operacionesApi.list({ limit: 50 });
+      const params: any = { limit: 100 };
+      if (fechaInicio) params.fecha_inicio = fechaInicio;
+      if (fechaFin) params.fecha_fin = fechaFin;
+      if (placa) params.placa = placa;
+      
+      const data = await operacionesApi.list(params);
       setOperaciones(data);
     } catch (error) {
       console.error('Error loading operaciones:', error);
     } finally {
       setLoading(false);
     }
+  };
+  
+  const handleSearch = () => {
+    setLoading(true);
+    loadOperaciones();
+  };
+  
+  const handleClearFilters = () => {
+    setFechaInicio('');
+    setFechaFin('');
+    setPlaca('');
+    setLoading(true);
+    loadOperaciones();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,21 +93,9 @@ export default function OperacionesPage() {
     }
   };
 
-  // Filtrar operaciones por búsqueda
-  const filteredOperaciones = operaciones.filter((op) => {
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      new Date(op.fecha_operacion).toLocaleDateString().includes(searchLower) ||
-      op.cantidad_vehiculos_solicitados.toString().includes(searchLower) ||
-      (op.vehiculos?.length || 0).toString().includes(searchLower) ||
-      (op.observacion && op.observacion.toLowerCase().includes(searchLower))
-    );
-  });
-
   const handleExportToExcel = () => {
-    const dataToExport = filteredOperaciones.map((op) => ({
-      Fecha: new Date(op.fecha_operacion).toLocaleDateString(),
+    const dataToExport = operaciones.map((op) => ({
+      Fecha: formatDateColombian(op.fecha_operacion),
       'Vehículos Solicitados': op.cantidad_vehiculos_solicitados,
       'Vehículos Iniciados': op.vehiculos?.length || 0,
       Observaciones: op.observacion || '-',
@@ -227,34 +238,81 @@ export default function OperacionesPage() {
         )}
 
         {/* Operaciones List */}
-        <Card title="Lista de Operaciones">
-          {/* Barra de búsqueda */}
-          <div className="mb-4">
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <FiSearch className="h-5 w-5 text-gray-400" />
+        <Card title="Lista de Operaciones de Hoy">
+          {/* Filtros */}
+          <div className="mb-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha Inicio
+                </label>
+                <input
+                  type="date"
+                  value={fechaInicio}
+                  onChange={(e) => setFechaInicio(e.target.value)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
+                />
               </div>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar operaciones..."
-                className="block w-full rounded-md border-gray-300 pl-10 pr-3 py-2 text-sm focus:border-primary-500 focus:ring-primary-500 border text-gray-900 placeholder:text-gray-400"
-              />
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha Fin
+                </label>
+                <input
+                  type="date"
+                  value={fechaFin}
+                  onChange={(e) => setFechaFin(e.target.value)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Placa
+                </label>
+                <input
+                  type="text"
+                  value={placa}
+                  onChange={(e) => setPlaca(e.target.value.toUpperCase())}
+                  placeholder="Ej: ABC123"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
+                />
+              </div>
             </div>
-            {searchTerm && (
-              <p className="mt-2 text-sm text-gray-500">
-                Mostrando {filteredOperaciones.length} de {operaciones.length}{' '}
-                operaciones
-              </p>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={handleSearch}
+                disabled={loading}
+                className="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 disabled:opacity-50"
+              >
+                <FiSearch className="mr-2 h-4 w-4" />
+                Buscar
+              </button>
+              <button
+                onClick={handleClearFilters}
+                disabled={loading}
+                className="inline-flex items-center rounded-md bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-200 disabled:opacity-50"
+              >
+                Limpiar Filtros
+              </button>
+            </div>
+            
+            {(fechaInicio || fechaFin || placa) && (
+              <div className="text-sm text-gray-600">
+                <strong>Filtros aplicados:</strong>
+                {fechaInicio && ` Desde: ${fechaInicio}`}
+                {fechaFin && ` Hasta: ${fechaFin}`}
+                {placa && ` Placa: ${placa}`}
+              </div>
             )}
           </div>
 
-          {filteredOperaciones.length === 0 ? (
+          {operaciones.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              {searchTerm
-                ? `No se encontraron operaciones para "${searchTerm}"`
-                : 'No hay operaciones registradas'}
+              {(fechaInicio || fechaFin || placa)
+                ? 'No se encontraron operaciones con los filtros aplicados'
+                : 'No hay operaciones para el día de hoy'}
             </div>
           ) : (
             <>
@@ -281,12 +339,10 @@ export default function OperacionesPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {filteredOperaciones.map((operacion) => (
+                    {operaciones.map((operacion) => (
                       <tr key={operacion.id} className="hover:bg-gray-50">
                         <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm font-medium text-gray-900">
-                          {new Date(
-                            operacion.fecha_operacion
-                          ).toLocaleDateString()}
+                          {formatDateColombian(operacion.fecha_operacion)}
                         </td>
                         <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm text-gray-500">
                           {operacion.cantidad_vehiculos_solicitados}
@@ -316,7 +372,7 @@ export default function OperacionesPage() {
 
               {/* Vista de tarjetas para móviles */}
               <div className="md:hidden space-y-4">
-                {filteredOperaciones.map((operacion) => (
+                {operaciones.map((operacion) => (
                   <div
                     key={operacion.id}
                     className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
@@ -324,9 +380,7 @@ export default function OperacionesPage() {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          {new Date(
-                            operacion.fecha_operacion
-                          ).toLocaleDateString()}
+                          {formatDateColombian(operacion.fecha_operacion)}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
                           Solicitados:{' '}

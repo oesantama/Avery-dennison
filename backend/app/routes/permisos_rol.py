@@ -6,6 +6,7 @@ from app.models.permiso_rol import PermisoRol
 from app.schemas.permiso_rol import PermisoRolCreate, PermisoRolUpdate, PermisoRolResponse
 from app.auth import get_current_active_user
 from app.models.usuario import Usuario
+from app.dependencies.authorization import require_page_permission_by_url
 
 router = APIRouter(prefix="/api/maestros/permisos-rol", tags=["maestros", "permisos-rol"])
 
@@ -17,9 +18,9 @@ def list_permisos_rol(
     page_id: Optional[int] = None,
     estado: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_active_user)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/permisos-rol", "ver"))
 ):
-    """Listar permisos por rol"""
+    """Listar permisos por rol. Requiere permiso de VER"""
     query = db.query(PermisoRol)
 
     if rol_id:
@@ -36,9 +37,9 @@ def list_permisos_rol(
 def get_permiso_rol(
     permiso_id: int,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_active_user)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/permisos-rol", "ver"))
 ):
-    """Obtener un permiso por ID"""
+    """Obtener un permiso por ID. Requiere permiso de VER"""
     permiso = db.query(PermisoRol).filter(PermisoRol.id == permiso_id).first()
     if not permiso:
         raise HTTPException(
@@ -51,9 +52,9 @@ def get_permiso_rol(
 def create_permiso_rol(
     permiso_data: PermisoRolCreate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_active_user)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/permisos-rol", "crear"))
 ):
-    """Crear un nuevo permiso para un rol"""
+    """Crear un nuevo permiso para un rol. Requiere permiso de CREAR"""
     # Verificar que no exista ya
     existing = db.query(PermisoRol).filter(
         PermisoRol.rol_id == permiso_data.rol_id,
@@ -76,9 +77,9 @@ def update_permiso_rol(
     permiso_id: int,
     permiso_data: PermisoRolUpdate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_active_user)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/permisos-rol", "editar"))
 ):
-    """Actualizar un permiso"""
+    """Actualizar un permiso. Requiere permiso de EDITAR"""
     permiso = db.query(PermisoRol).filter(PermisoRol.id == permiso_id).first()
     if not permiso:
         raise HTTPException(
@@ -99,9 +100,9 @@ def update_permiso_rol(
 def delete_permiso_rol(
     permiso_id: int,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_active_user)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/permisos-rol", "eliminar"))
 ):
-    """Eliminar un permiso (cambiar a inactivo)"""
+    """Eliminar un permiso (cambiar a inactivo). Requiere permiso de ELIMINAR"""
     permiso = db.query(PermisoRol).filter(PermisoRol.id == permiso_id).first()
     if not permiso:
         raise HTTPException(

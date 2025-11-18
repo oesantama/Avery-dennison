@@ -148,6 +148,9 @@ class UsuarioBase(BaseModel):
 class UsuarioCreate(UsuarioBase):
     password: str = Field(..., min_length=6, description="Contraseña (min 6 caracteres)")
 
+    class Config:
+        extra = "ignore"  # Ignorar campos adicionales como 'permisos'
+
     @validator('password')
     def validate_password(cls, v):
         if len(v) < 6:

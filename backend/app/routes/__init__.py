@@ -1,3 +1,3 @@
-from app.routes import auth, operaciones, entregas, dashboard
+from app.routes import auth, operaciones, entregas, dashboard, permisos_usuario
 
-__all__ = ["auth", "operaciones", "entregas", "dashboard"]
+__all__ = ["auth", "operaciones", "entregas", "dashboard", "permisos_usuario"]

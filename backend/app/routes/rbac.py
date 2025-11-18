@@ -21,7 +21,7 @@ from app.schemas.rbac import (
     PermisosUsuarioResponse,
     MenuItemPermisos
 )
-from app.dependencies.authorization import require_admin
+from app.dependencies.authorization import require_admin, require_page_permission_by_url
 from app.auth import get_current_active_user
 from app.services.authorization import AuthorizationService
 
@@ -37,9 +37,9 @@ def listar_roles(
     activo: bool = None,
     estado: str = None,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/roles", "ver"))
 ):
-    """Lista todos los roles. Solo administradores."""
+    """Lista todos los roles. Requiere permiso de VER en /maestros/roles"""
     query = db.query(Rol)
     if activo is not None:
         query = query.filter(Rol.activo == activo)
@@ -52,9 +52,9 @@ def listar_roles(
 def obtener_rol(
     rol_id: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/roles", "ver"))
 ):
-    """Obtiene un rol específico. Solo administradores."""
+    """Obtiene un rol específico. Requiere permiso de VER en /maestros/roles"""
     rol = db.query(Rol).filter(Rol.id == rol_id).first()
     if not rol:
         raise HTTPException(status_code=404, detail="Rol no encontrado")
@@ -65,9 +65,9 @@ def obtener_rol(
 def crear_rol(
     rol: RolCreate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/roles", "crear"))
 ):
-    """Crea un nuevo rol. Solo administradores."""
+    """Crea un nuevo rol. Requiere permiso de CREAR en /maestros/roles"""
     # Verificar que el nombre no exista
     if db.query(Rol).filter(Rol.nombre == rol.nombre).first():
         raise HTTPException(
@@ -94,9 +94,9 @@ def actualizar_rol(
     rol_id: int,
     rol_update: RolUpdate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/roles", "editar"))
 ):
-    """Actualiza un rol existente. Solo administradores."""
+    """Actualiza un rol existente. Requiere permiso de EDITAR en /maestros/roles"""
     db_rol = db.query(Rol).filter(Rol.id == rol_id).first()
     if not db_rol:
         raise HTTPException(status_code=404, detail="Rol no encontrado")
@@ -131,9 +131,9 @@ def actualizar_rol(
 def eliminar_rol(
     rol_id: int,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/roles", "eliminar"))
 ):
-    """Desactiva un rol. Solo administradores."""
+    """Desactiva un rol. Requiere permiso de ELIMINAR en /maestros/roles"""
     db_rol = db.query(Rol).filter(Rol.id == rol_id).first()
     if not db_rol:
         raise HTTPException(status_code=404, detail="Rol no encontrado")
@@ -162,9 +162,9 @@ def listar_pages(
     limit: int = 100,
     activo: bool = None,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/pages", "ver"))
 ):
-    """Lista todas las páginas. Solo administradores."""
+    """Lista todas las páginas. Requiere permiso de VER en /maestros/pages"""
     query = db.query(Page)
     if activo is not None:
         query = query.filter(Page.activo == activo)
@@ -175,9 +175,9 @@ def listar_pages(
 def obtener_page(
     page_id: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/pages", "ver"))
 ):
-    """Obtiene una página específica. Solo administradores."""
+    """Obtiene una página específica. Requiere permiso de VER en /maestros/pages"""
     page = db.query(Page).filter(Page.id == page_id).first()
     if not page:
         raise HTTPException(status_code=404, detail="Página no encontrada")
@@ -188,9 +188,9 @@ def obtener_page(
 def crear_page(
     page: PageCreate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/pages", "crear"))
 ):
-    """Crea una nueva página. Solo administradores."""
+    """Crea una nueva página. Requiere permiso de CREAR en /maestros/pages"""
     # Verificar que el nombre no exista
     if db.query(Page).filter(Page.nombre == page.nombre).first():
         raise HTTPException(
@@ -210,9 +210,9 @@ def actualizar_page(
     page_id: int,
     page_update: PageUpdate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/pages", "editar"))
 ):
-    """Actualiza una página existente. Solo administradores."""
+    """Actualiza una página existente. Requiere permiso de EDITAR en /maestros/pages"""
     db_page = db.query(Page).filter(Page.id == page_id).first()
     if not db_page:
         raise HTTPException(status_code=404, detail="Página no encontrada")
@@ -239,9 +239,9 @@ def actualizar_page(
 def eliminar_page(
     page_id: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/pages", "eliminar"))
 ):
-    """Desactiva una página. Solo administradores."""
+    """Desactiva una página. Requiere permiso de ELIMINAR en /maestros/pages"""
     db_page = db.query(Page).filter(Page.id == page_id).first()
     if not db_page:
         raise HTTPException(status_code=404, detail="Página no encontrada")
@@ -259,9 +259,9 @@ def listar_permisos_rol(
     rol_id: int = None,
     page_id: int = None,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/permisos-rol", "ver"))
 ):
-    """Lista permisos de roles. Puede filtrar por rol_id o page_id. Solo administradores."""
+    """Lista permisos de roles. Puede filtrar por rol_id o page_id. Requiere permiso de VER"""
     query = db.query(PermisosRol)
     if rol_id:
         query = query.filter(PermisosRol.rol_id == rol_id)
@@ -274,9 +274,9 @@ def listar_permisos_rol(
 def crear_permiso_rol(
     permiso: PermisosRolCreate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/permisos-rol", "crear"))
 ):
-    """Crea/actualiza permisos de un rol en una página. Solo administradores."""
+    """Crea/actualiza permisos de un rol en una página. Requiere permiso de CREAR"""
     # Verificar que el rol existe
     rol = db.query(Rol).filter(Rol.id == permiso.rol_id).first()
     if not rol:
@@ -312,9 +312,9 @@ def actualizar_permiso_rol(
     permiso_id: int,
     permiso_update: PermisosRolUpdate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/permisos-rol", "editar"))
 ):
-    """Actualiza permisos de un rol. Solo administradores."""
+    """Actualiza permisos de un rol. Requiere permiso de EDITAR"""
     db_permiso = db.query(PermisosRol).filter(PermisosRol.id == permiso_id).first()
     if not db_permiso:
         raise HTTPException(status_code=404, detail="Permiso no encontrado")
@@ -335,9 +335,9 @@ def listar_permisos_usuario(
     usuario_id: int = None,
     page_id: int = None,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/permisos-usuario", "ver"))
 ):
-    """Lista permisos específicos de usuarios. Puede filtrar por usuario_id o page_id. Solo administradores."""
+    """Lista permisos específicos de usuarios. Puede filtrar por usuario_id o page_id. Requiere permiso de VER"""
     query = db.query(PermisosUsuario)
     if usuario_id:
         query = query.filter(PermisosUsuario.usuario_id == usuario_id)
@@ -350,9 +350,9 @@ def listar_permisos_usuario(
 def crear_permiso_usuario(
     permiso: PermisosUsuarioCreate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/permisos-usuario", "crear"))
 ):
-    """Crea/actualiza permisos específicos de un usuario en una página. Solo administradores."""
+    """Crea/actualiza permisos específicos de un usuario en una página. Requiere permiso de CREAR"""
     # Verificar que el usuario existe
     usuario = db.query(Usuario).filter(Usuario.id == permiso.usuario_id).first()
     if not usuario:
@@ -387,9 +387,9 @@ def crear_permiso_usuario(
 def crear_permisos_usuario_bulk(
     permisos: List[PermisosUsuarioCreate],
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/permisos-usuario", "crear"))
 ):
-    """Crea/actualiza permisos en lote para un usuario. Solo administradores."""
+    """Crea/actualiza permisos en lote para un usuario. Requiere permiso de CREAR"""
     resultados = []
     
     for permiso in permisos:
@@ -432,9 +432,9 @@ def actualizar_permiso_usuario(
     permiso_id: int,
     permiso: PermisosUsuarioUpdate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/permisos-usuario", "editar"))
 ):
-    """Actualiza un permiso específico de usuario. Solo administradores."""
+    """Actualiza un permiso específico de usuario. Requiere permiso de EDITAR"""
     db_permiso = db.query(PermisosUsuario).filter(PermisosUsuario.id == permiso_id).first()
     if not db_permiso:
         raise HTTPException(status_code=404, detail="Permiso no encontrado")
@@ -452,9 +452,9 @@ def actualizar_permiso_usuario(
 def eliminar_permiso_usuario(
     permiso_id: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_page_permission_by_url("/maestros/permisos-usuario", "eliminar"))
 ):
-    """Elimina un permiso específico de usuario (volverá a usar el del rol). Solo administradores."""
+    """Elimina un permiso específico de usuario (volverá a usar el del rol). Requiere permiso de ELIMINAR"""
     db_permiso = db.query(PermisosUsuario).filter(PermisosUsuario.id == permiso_id).first()
     if not db_permiso:
         raise HTTPException(status_code=404, detail="Permiso no encontrado")

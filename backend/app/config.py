@@ -1,12 +1,13 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+import os
 
 class Settings(BaseSettings):
     database_url: str
     secret_key: str
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 480  # 8 horas (aumentado de 30 min)
-    upload_dir: str = "uploads"
+    upload_dir: str = "/app/uploads"  # Ruta absoluta dentro del contenedor
 
     class Config:
         env_file = ".env"
