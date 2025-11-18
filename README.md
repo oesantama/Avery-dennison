@@ -2,6 +2,43 @@
 
 Sistema completo para la gestión de operaciones diarias de vehículos, entregas y seguimiento de facturas.
 
+---
+
+## 🚀 Deployment Rápido (Windows Server)
+
+### ⚡ Instalación Automática - 3 Comandos
+
+**Requisito único:** Docker Desktop instalado
+
+```powershell
+# 1. Descargar script
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/oesantama/Avery-dennison/main/deploy-automatico.ps1" -OutFile "deploy-automatico.ps1"
+
+# 2. Ejecutar como Administrador
+powershell -ExecutionPolicy Bypass -File .\deploy-automatico.ps1
+
+# 3. Acceder al sistema
+# Dominio: http://avery.millasiete.com:8035
+# Local: http://localhost:8035
+# Usuario: admin | Contraseña: admin123
+```
+
+**El script automáticamente:**
+
+- ✅ Instala Git si no existe
+- ✅ Clona el proyecto desde GitHub
+- ✅ Configura dominio y variables de entorno
+- ✅ Configura firewall (puertos 8035, 3035, 5432)
+- ✅ Construye e inicia Docker
+- ✅ Verifica todo esté funcionando
+
+**📖 Guías Completas:**
+
+- [Deployment Automático](./DEPLOYMENT_AUTOMATICO.md) - Guía rápida del script
+- [Deployment Manual](./DESPLIEGUE_WINDOWS_SERVER.md) - Guía paso a paso detallada
+
+---
+
 ## Descripción
 
 Este sistema permite:
@@ -23,6 +60,7 @@ Este sistema permite:
 ## Stack Tecnológico
 
 ### Frontend
+
 - **Framework**: Next.js 14 con React 18
 - **Lenguaje**: TypeScript
 - **Estilos**: Tailwind CSS
@@ -30,6 +68,7 @@ Este sistema permite:
 - **HTTP Client**: Axios
 
 ### Backend
+
 - **Framework**: FastAPI (Python)
 - **Base de datos**: PostgreSQL
 - **ORM**: SQLAlchemy
@@ -121,22 +160,26 @@ El frontend estará disponible en http://localhost:3000
 ## Uso del Sistema
 
 ### 1. Login
+
 - Acceder a http://localhost:3000
 - Usuario: `admin`
 - Contraseña: `admin123`
 
 ### 2. Crear Operación Diaria
+
 1. Ir a **Operaciones**
 2. Clic en "Nueva Operación"
 3. Seleccionar fecha y cantidad de vehículos necesarios
 4. Agregar observaciones (opcional)
 
 ### 3. Registrar Vehículos
+
 1. Entrar al detalle de una operación
 2. Clic en "Agregar Vehículo"
 3. Ingresar placa, hora de inicio y observaciones
 
 ### 4. Gestionar Entregas
+
 1. Ir a **Entregas**
 2. Clic en "Nueva Entrega"
 3. Seleccionar vehículo y completar datos de factura/cliente
@@ -144,6 +187,7 @@ El frontend estará disponible en http://localhost:3000
 5. Subir foto de evidencia
 
 ### 5. Ver Dashboard
+
 - Acceder al Dashboard para ver:
   - Vehículos activos del día
   - Entregas pendientes y cumplidas
@@ -163,29 +207,34 @@ El frontend estará disponible en http://localhost:3000
 ## API Endpoints
 
 ### Autenticación
+
 - `POST /api/auth/login` - Login
 - `POST /api/auth/register` - Registro
 - `GET /api/auth/me` - Usuario actual
 
 ### Operaciones
+
 - `POST /api/operaciones/` - Crear operación
 - `GET /api/operaciones/` - Listar operaciones
 - `GET /api/operaciones/{id}` - Detalle con estadísticas
 - `POST /api/operaciones/vehiculos` - Agregar vehículo
 
 ### Entregas
+
 - `POST /api/entregas/` - Crear entrega
 - `GET /api/entregas/` - Listar entregas
 - `PATCH /api/entregas/{id}` - Actualizar estado
 - `POST /api/entregas/{id}/fotos` - Subir foto
 
 ### Dashboard
+
 - `GET /api/dashboard/kpis` - Obtener KPIs
 - `GET /api/dashboard/entregas` - Buscar con filtros
 
 ## Documentación API
 
 Una vez ejecutando el backend, accede a:
+
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
@@ -200,12 +249,14 @@ Una vez ejecutando el backend, accede a:
 ## Desarrollo
 
 ### Backend
+
 ```bash
 cd backend
 uvicorn main:app --reload
 ```
 
 ### Frontend
+
 ```bash
 cd frontend
 npm run dev
@@ -214,12 +265,14 @@ npm run dev
 ## Producción
 
 ### Backend
+
 ```bash
 cd backend
 uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 ### Frontend
+
 ```bash
 cd frontend
 npm run build

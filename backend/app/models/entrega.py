@@ -7,6 +7,7 @@ from app.database import Base
 class EstadoEntrega(str, enum.Enum):
     PENDIENTE = "pendiente"
     CUMPLIDO = "cumplido"
+    NO_CUMPLIDO = "no_cumplido"
 
 class Entrega(Base):
     __tablename__ = "entregas"
@@ -26,6 +27,7 @@ class Entrega(Base):
     # Relationships
     vehiculo = relationship("VehiculoOperacion", back_populates="entregas")
     fotos = relationship("FotoEvidencia", back_populates="entrega", cascade="all, delete-orphan")
+    usuario_cumplido = relationship("Usuario", foreign_keys=[usuario_cumplido_id])
 
 class FotoEvidencia(Base):
     __tablename__ = "fotos_evidencia"

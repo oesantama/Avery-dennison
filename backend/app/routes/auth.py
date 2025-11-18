@@ -72,27 +72,45 @@ async def get_my_permissions(
     db: Session = Depends(get_db)
 ):
     """
-    Obtiene los permisos del usuario actual basado en su rol.
-    Retorna una lista de URLs de páginas a las que tiene acceso.
+    ✅ Obtiene SOLO los permisos especiales del usuario (tabla permisos_usuarios).
+    ✅ SIEMPRE incluye /dashboard como permiso obligatorio.
+    ✅ Retorna permisos detallados (puede_ver, puede_crear, puede_editar, puede_borrar).
+    NO consulta permisos del rol, solo permisos asignados directamente al usuario.
     """
-    from app.models.permisos_rol import PermisoRol
+    from app.models.permisos import PermisosUsuario
     from app.models.page import Page
     
-    if not current_user.rol_id:
-        return {"pages": []}
-    
-    # Obtener permisos activos del rol
-    permisos = db.query(PermisoRol).filter(
-        PermisoRol.rol_id == current_user.rol_id,
-        PermisoRol.estado == "activo"
+    # ✅ Obtener SOLO permisos especiales del usuario (no del rol)
+    permisos_usuario = db.query(PermisosUsuario).filter(
+        PermisosUsuario.usuario_id == current_user.id
     ).all()
     
-    # Obtener URLs de las páginas permitidas
-    page_ids = [p.page_id for p in permisos]
-    pages = db.query(Page).filter(Page.id.in_(page_ids)).all()
-    page_urls = [page.url for page in pages]
+    # ✅ Construir diccionario de permisos detallados
+    permisos_detallados = {}
+    for p in permisos_usuario:
+        page = db.query(Page).filter(Page.id == p.page_id).first()
+        if page:
+            permisos_detallados[page.ruta] = {
+                "puede_ver": p.puede_ver or False,
+                "puede_crear": p.puede_crear or False,
+                "puede_editar": p.puede_editar or False,
+                "puede_borrar": p.puede_eliminar or False
+            }
     
-    return {"pages": page_urls}
+    # ✅ SIEMPRE agregar /dashboard como permiso obligatorio (todos los permisos)
+    if "/dashboard" not in permisos_detallados:
+        permisos_detallados["/dashboard"] = {
+            "puede_ver": True,
+            "puede_crear": False,
+            "puede_editar": False,
+            "puede_borrar": False
+        }
+    
+    # ✅ Retornar lista de páginas (para compatibilidad) y permisos detallados
+    return {
+        "pages": list(permisos_detallados.keys()),
+        "permissions": permisos_detallados
+    }
 
 @router.post("/logout")
 async def logout(

@@ -24,6 +24,11 @@ async def crear_operacion(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_active_user)
 ):
+    """
+    ✅ Crea una nueva operación diaria
+    ✅ La fecha viene del frontend en formato YYYY-MM-DD (sin zona horaria)
+    ✅ Se guarda tal cual sin conversión
+    """
     db_operacion = OperacionDiaria(
         **operacion.model_dump(),
         usuario_id=current_user.id
@@ -39,15 +44,31 @@ async def listar_operaciones(
     limit: int = 100,
     fecha_inicio: date = None,
     fecha_fin: date = None,
+    placa: str = None,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_active_user)
 ):
+    from zoneinfo import ZoneInfo
+    from datetime import datetime
+    
     query = db.query(OperacionDiaria)
 
-    if fecha_inicio:
-        query = query.filter(OperacionDiaria.fecha_operacion >= fecha_inicio)
-    if fecha_fin:
-        query = query.filter(OperacionDiaria.fecha_operacion <= fecha_fin)
+    # Si no se especifican filtros de fecha, mostrar solo las de hoy
+    if not fecha_inicio and not fecha_fin:
+        colombia_tz = ZoneInfo("America/Bogota")
+        today = datetime.now(colombia_tz).date()
+        query = query.filter(OperacionDiaria.fecha_operacion == today)
+    else:
+        if fecha_inicio:
+            query = query.filter(OperacionDiaria.fecha_operacion >= fecha_inicio)
+        if fecha_fin:
+            query = query.filter(OperacionDiaria.fecha_operacion <= fecha_fin)
+    
+    # Filtro por placa
+    if placa:
+        query = query.join(OperacionDiaria.vehiculos).filter(
+            VehiculoOperacion.placa.ilike(f"%{placa}%")
+        )
 
     operaciones = query.order_by(OperacionDiaria.fecha_operacion.desc()).offset(skip).limit(limit).all()
     return operaciones
@@ -128,3 +149,16 @@ async def listar_vehiculos_operacion(
         VehiculoOperacion.operacion_id == operacion_id
     ).all()
     return vehiculos
+
+@router.get("/vehiculo/{vehiculo_id}", response_model=VehiculoOperacionResponse)
+async def obtener_vehiculo_operacion(
+    vehiculo_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    vehiculo = db.query(VehiculoOperacion).filter(
+        VehiculoOperacion.id == vehiculo_id
+    ).first()
+    if not vehiculo:
+        raise HTTPException(status_code=404, detail="Vehículo no encontrado")
+    return vehiculo

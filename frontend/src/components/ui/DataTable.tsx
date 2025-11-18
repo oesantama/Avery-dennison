@@ -8,7 +8,7 @@ export interface Column<T> {
   key: string;
   label: string;
   sortable?: boolean;
-  render?: (item: T) => React.ReactNode;
+  render?: (value: any, item: T) => React.ReactNode;
 }
 
 interface DataTableProps<T> {
@@ -234,7 +234,11 @@ export default function DataTable<T extends Record<string, any>>({
                       key={column.key}
                       className="whitespace-nowrap px-6 py-4 text-sm text-gray-900"
                     >
-                      {column.render ? column.render(item) : item[column.key]}
+                      {column.render ? column.render(item[column.key], item) : (
+                        typeof item[column.key] === 'object' && item[column.key] !== null
+                          ? JSON.stringify(item[column.key])
+                          : String(item[column.key] ?? '-')
+                      )}
                     </td>
                   ))}
                   {(onEdit || onDelete || customActions) && (

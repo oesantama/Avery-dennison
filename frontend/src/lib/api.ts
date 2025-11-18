@@ -87,8 +87,16 @@ export const authApi = {
     return response.data;
   },
 
-  getMyPermissions: async (): Promise<{ pages: string[] }> => {
-    const response = await api.get<{ pages: string[] }>(
+  getMyPermissions: async (): Promise<{ 
+    pages: string[];
+    permissions: Record<string, {
+      puede_ver: boolean;
+      puede_crear: boolean;
+      puede_editar: boolean;
+      puede_borrar: boolean;
+    }>;
+  }> => {
+    const response = await api.get(
       '/api/auth/my-permissions'
     );
     return response.data;
@@ -141,6 +149,13 @@ export const operacionesApi = {
   listVehiculos: async (operacionId: number): Promise<VehiculoOperacion[]> => {
     const response = await api.get<VehiculoOperacion[]>(
       `/api/operaciones/vehiculos/${operacionId}`
+    );
+    return response.data;
+  },
+
+  getVehiculo: async (vehiculoId: number): Promise<VehiculoOperacion> => {
+    const response = await api.get<VehiculoOperacion>(
+      `/api/operaciones/vehiculo/${vehiculoId}`
     );
     return response.data;
   },
@@ -259,6 +274,14 @@ export const usuariosApi = {
     id: number
   ): Promise<{ message: string; usuario_id: number }> => {
     const response = await api.post(`/api/usuarios/${id}/desbloquear`);
+    return response.data;
+  },
+
+  changePassword: async (
+    id: number,
+    data: { current_password: string; new_password: string }
+  ): Promise<{ message: string }> => {
+    const response = await api.post(`/api/usuarios/${id}/change-password`, data);
     return response.data;
   },
 };
@@ -385,6 +408,16 @@ export const entregasApi = {
   update: async (id: number, data: EntregaUpdate): Promise<Entrega> => {
     const response = await api.patch<Entrega>(`/api/entregas/${id}`, data);
     return response.data;
+  },
+
+  uploadPhoto: async (entregaId: number, file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    await api.post(`/api/entregas/${entregaId}/fotos`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
   },
 
   uploadFoto: async (entregaId: number, file: File): Promise<void> => {

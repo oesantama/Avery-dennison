@@ -12,6 +12,7 @@ import type { Rol, RolCreate } from '@/types';
 import { FiPlus, FiShield } from 'react-icons/fi';
 import Toast from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
+import SimpleLoader from '@/components/ui/SimpleLoader';
 
 export default function RolesPage() {
   const router = useRouter();
@@ -75,20 +76,6 @@ export default function RolesPage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('¿Está seguro de que desea desactivar este rol?')) {
-      return;
-    }
-    try {
-      await rolesApi.delete(id);
-      loadRoles();
-    } catch (error: any) {
-      console.error('Error deleting rol:', error);
-      const message = error?.response?.data?.detail || 'Error al desactivar el rol';
-      alert(message);
-    }
-  };
-
   const resetForm = () => {
     setFormData({
       nombre: '',
@@ -119,13 +106,13 @@ export default function RolesPage() {
       key: 'estado',
       label: 'Estado',
       sortable: true,
-      render: (rol) => (
+      render: (value) => (
         <span
           className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getEstadoBadge(
-            rol.estado
+            value as string
           )}`}
         >
-          {rol.estado === 'activo' ? 'Activo' : 'Inactivo'}
+          {(value as string) === 'activo' ? 'Activo' : 'Inactivo'}
         </span>
       ),
     },
@@ -133,18 +120,12 @@ export default function RolesPage() {
       key: 'fecha_control',
       label: 'Fecha Control',
       sortable: true,
-      render: (rol) => new Date(rol.fecha_control).toLocaleDateString(),
+      render: (value) => new Date(value as string).toLocaleDateString('es-CO'),
     },
   ];
 
   if (authLoading || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold">Cargando...</h2>
-        </div>
-      </div>
-    );
+    return <SimpleLoader message="Cargando roles..." />;
   }
 
   return (
