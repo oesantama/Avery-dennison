@@ -121,11 +121,10 @@ Write-Host ""
 Write-Host "[4/8] Clonando/Actualizando proyecto desde GitHub..." -ForegroundColor Yellow
 
 $repoUrl = "https://github.com/oesantama/Avery-dennison.git"
-$projectPath = $deployPath
+$projectPath = Join-Path $deployPath "Avery-dennison"
 
-# Verificar si ya es un repositorio git
 if (Test-Path (Join-Path $projectPath ".git")) {
-    Write-Host "El proyecto ya existe en este directorio. Actualizando..." -ForegroundColor Yellow
+    Write-Host "El proyecto ya existe. Actualizando..." -ForegroundColor Yellow
     Set-Location $projectPath
     
     try {
@@ -136,49 +135,98 @@ if (Test-Path (Join-Path $projectPath ".git")) {
         Write-Host "Continuando con la version actual..." -ForegroundColor Yellow
     }
 } else {
-    # Verificar si el directorio esta vacio o solo tiene el script
-    $existingFiles = Get-ChildItem -Path $projectPath -Force | Where-Object { $_.Name -ne "deploy-automatico.ps1" }
+    Write-Host "Clonando repositorio..." -ForegroundColor Cyan
+    Set-Location $deployPath
     
-    if ($existingFiles.Count -eq 0) {
-        # Directorio vacio, clonar directamente aqui
-        Write-Host "Clonando repositorio directamente en el directorio actual..." -ForegroundColor Cyan
+    try {
+        git clone $repoUrl
+        Write-Host "Proyecto clonado exitosamente en $projectPath" -ForegroundColor Green
         Set-Location $projectPath
-        
-        try {
-            # Clonar en el directorio actual usando punto (.)
-            git clone $repoUrl .
-            Write-Host "Proyecto clonado exitosamente en $projectPath" -ForegroundColor Green
-        } catch {
-            Write-Host "ERROR al clonar: $_" -ForegroundColor Red
-            Write-Host "Verifica tu conexion a internet y que tengas acceso al repositorio" -ForegroundColor Yellow
-            pause
-            exit 1
-        }
-    } else {
-        # Hay archivos, clonar en subcarpeta y mover
-        Write-Host "Clonando repositorio en carpeta temporal..." -ForegroundColor Cyan
-        Set-Location $projectPath
-        
-        try {
-            # Clonar en carpeta temporal
-            git clone $repoUrl Avery-dennison-temp
-            
-            # Mover todos los archivos (incluyendo .git) al directorio actual
-            Write-Host "Moviendo archivos al directorio actual..." -ForegroundColor Cyan
-            Get-ChildItem -Path "Avery-dennison-temp" -Force | Move-Item -Destination $projectPath -Force
-            
-            # Eliminar carpeta temporal vacia
-            Remove-Item "Avery-dennison-temp" -Force -ErrorAction SilentlyContinue
-            
-            Write-Host "Proyecto clonado exitosamente en $projectPath" -ForegroundColor Green
-        } catch {
-            Write-Host "ERROR al clonar: $_" -ForegroundColor Red
-            Write-Host "Verifica tu conexion a internet y que tengas acceso al repositorio" -ForegroundColor Yellow
-            pause
-            exit 1
-        }
+    } catch {
+        Write-Host "ERROR al clonar: $_" -ForegroundColor Red
+        Write-Host "Verifica tu conexion a internet y que tengas acceso al repositorio" -ForegroundColor Yellow
+        pause
+        exit 1
     }
 }
+
+# Crear archivo index.html de redireccion en la carpeta raiz
+Write-Host "Creando index.html de redireccion..." -ForegroundColor Cyan
+$indexPath = Join-Path $deployPath "index.html"
+$indexContent = @"
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="0; url=http://avery.millasiete.com:8035">
+    <title>Redirigiendo...</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.1em;
+            border: 2px solid white;
+            padding: 10px 30px;
+            border-radius: 25px;
+            display: inline-block;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        a:hover {
+            background: white;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sistema de Gestion de Vehiculos</h1>
+        <div class="spinner"></div>
+        <p>Redirigiendo al sistema...</p>
+        <a href="http://avery.millasiete.com:8035">Ir al Sistema</a>
+    </div>
+</body>
+</html>
+"@
+
+$indexContent | Out-File -FilePath $indexPath -Encoding UTF8 -Force
+Write-Host "Index.html creado en $deployPath" -ForegroundColor Green
 
 Write-Host ""
 
