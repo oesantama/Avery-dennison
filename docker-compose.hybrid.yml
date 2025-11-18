@@ -1,39 +1,7 @@
-# Docker Compose para Windows Containers
-# Usar con: docker-compose -f docker-compose.windows.yml up -d
+# Docker Compose Híbrido - PostgreSQL nativo + Contenedores Windows
+# PostgreSQL instalado en el host, Backend y Frontend containerizados
 
 services:
-  # Base de datos SQL Server (Windows Container - nativo)
-  db:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: vehiculos-db
-    environment:
-      ACCEPT_EULA: "Y"
-      SA_PASSWORD: "YourStrong!Passw0rd"
-      MSSQL_PID: Express
-    ports:
-      - '1433:1433'
-    volumes:
-      - mssql_data:C:\\data
-    networks:
-      - vehiculos-network
-    healthcheck:
-      test:
-        [
-          'CMD',
-          'sqlcmd',
-          '-S',
-          'localhost',
-          '-U',
-          'sa',
-          '-P',
-          'YourStrong!Passw0rd',
-          '-Q',
-          'SELECT 1',
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # Backend FastAPI (Windows Container)
   backend:
     build:
@@ -43,16 +11,16 @@ services:
     ports:
       - '3035:3035'
     environment:
-      DATABASE_URL: postgresql://postgres:yourpassword@db:5432/vehiculos_operacion
+      # Conectar a PostgreSQL en el host usando host.docker.internal
+      DATABASE_URL: postgresql://postgres:yourpassword@host.docker.internal:5432/vehiculos_operacion
       SECRET_KEY: your-secret-key-here-change-in-production
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
       UPLOAD_DIR: uploads
     volumes:
       - backend_uploads:C:\\app\\uploads
-    depends_on:
-      db:
-        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - vehiculos-network
 
@@ -79,5 +47,4 @@ networks:
     driver: nat
 
 volumes:
-  mssql_data:
   backend_uploads:
