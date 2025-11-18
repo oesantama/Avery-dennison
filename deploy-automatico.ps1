@@ -121,10 +121,11 @@ Write-Host ""
 Write-Host "[4/8] Clonando/Actualizando proyecto desde GitHub..." -ForegroundColor Yellow
 
 $repoUrl = "https://github.com/oesantama/Avery-dennison.git"
-$projectPath = Join-Path $deployPath "Avery-dennison"
+$projectPath = $deployPath
 
+# Verificar si ya es un repositorio git
 if (Test-Path (Join-Path $projectPath ".git")) {
-    Write-Host "El proyecto ya existe. Actualizando..." -ForegroundColor Yellow
+    Write-Host "El proyecto ya existe en este directorio. Actualizando..." -ForegroundColor Yellow
     Set-Location $projectPath
     
     try {
@@ -135,18 +136,47 @@ if (Test-Path (Join-Path $projectPath ".git")) {
         Write-Host "Continuando con la version actual..." -ForegroundColor Yellow
     }
 } else {
-    Write-Host "Clonando repositorio..." -ForegroundColor Cyan
-    Set-Location $deployPath
+    # Verificar si el directorio esta vacio o solo tiene el script
+    $existingFiles = Get-ChildItem -Path $projectPath -Force | Where-Object { $_.Name -ne "deploy-automatico.ps1" }
     
-    try {
-        git clone $repoUrl
-        Write-Host "Proyecto clonado exitosamente" -ForegroundColor Green
+    if ($existingFiles.Count -eq 0) {
+        # Directorio vacio, clonar directamente aqui
+        Write-Host "Clonando repositorio directamente en el directorio actual..." -ForegroundColor Cyan
         Set-Location $projectPath
-    } catch {
-        Write-Host "ERROR al clonar: $_" -ForegroundColor Red
-        Write-Host "Verifica tu conexion a internet y que tengas acceso al repositorio" -ForegroundColor Yellow
-        pause
-        exit 1
+        
+        try {
+            # Clonar en el directorio actual usando punto (.)
+            git clone $repoUrl .
+            Write-Host "Proyecto clonado exitosamente en $projectPath" -ForegroundColor Green
+        } catch {
+            Write-Host "ERROR al clonar: $_" -ForegroundColor Red
+            Write-Host "Verifica tu conexion a internet y que tengas acceso al repositorio" -ForegroundColor Yellow
+            pause
+            exit 1
+        }
+    } else {
+        # Hay archivos, clonar en subcarpeta y mover
+        Write-Host "Clonando repositorio en carpeta temporal..." -ForegroundColor Cyan
+        Set-Location $projectPath
+        
+        try {
+            # Clonar en carpeta temporal
+            git clone $repoUrl Avery-dennison-temp
+            
+            # Mover todos los archivos (incluyendo .git) al directorio actual
+            Write-Host "Moviendo archivos al directorio actual..." -ForegroundColor Cyan
+            Get-ChildItem -Path "Avery-dennison-temp" -Force | Move-Item -Destination $projectPath -Force
+            
+            # Eliminar carpeta temporal vacia
+            Remove-Item "Avery-dennison-temp" -Force -ErrorAction SilentlyContinue
+            
+            Write-Host "Proyecto clonado exitosamente en $projectPath" -ForegroundColor Green
+        } catch {
+            Write-Host "ERROR al clonar: $_" -ForegroundColor Red
+            Write-Host "Verifica tu conexion a internet y que tengas acceso al repositorio" -ForegroundColor Yellow
+            pause
+            exit 1
+        }
     }
 }
 
