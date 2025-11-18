@@ -1,0 +1,77 @@
+# Docker Compose para Windows Containers
+# Usar con: docker-compose -f docker-compose.windows.yml up -d
+
+services:
+  # Base de datos PostgreSQL (Windows Container)
+  db:
+    image: stellirin/postgres-windows:15
+    container_name: vehiculos-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_DB: vehiculos_operacion
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:C:\\data
+    networks:
+      - vehiculos-network
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'powershell',
+          '-Command',
+          'Test-NetConnection -ComputerName localhost -Port 5432',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend FastAPI (Windows Container)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.windows
+    container_name: vehiculos-backend
+    ports:
+      - '3035:3035'
+    environment:
+      DATABASE_URL: postgresql://postgres:yourpassword@db:5432/vehiculos_operacion
+      SECRET_KEY: your-secret-key-here-change-in-production
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      UPLOAD_DIR: uploads
+    volumes:
+      - backend_uploads:C:\\app\\uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - vehiculos-network
+
+  # Frontend Next.js (Windows Container)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.windows
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3035
+    container_name: vehiculos-frontend
+    ports:
+      - '8035:8035'
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3035
+      NODE_ENV: production
+    depends_on:
+      - backend
+    networks:
+      - vehiculos-network
+
+networks:
+  vehiculos-network:
+    driver: nat
+
+volumes:
+  postgres_data:
+  backend_uploads:

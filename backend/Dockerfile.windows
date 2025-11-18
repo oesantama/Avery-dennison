@@ -1,0 +1,43 @@
+# Backend Dockerfile for Windows Containers - FastAPI
+# Usar Windows Server Core con Python
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+# Metadata
+LABEL maintainer="Avery Dennison Project"
+LABEL description="FastAPI Backend for Windows Containers"
+
+# Establecer PowerShell como shell predeterminado
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+# Instalar Python 3.11
+RUN Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe' -OutFile 'C:\python-installer.exe'; \
+    Start-Process -FilePath 'C:\python-installer.exe' -ArgumentList '/quiet', 'InstallAllUsers=1', 'PrependPath=1', 'Include_test=0' -Wait; \
+    Remove-Item 'C:\python-installer.exe' -Force
+
+# Verificar instalación de Python
+RUN python --version; pip --version
+
+# Establecer directorio de trabajo
+WORKDIR C:\\app
+
+# Copiar archivo de requerimientos
+COPY requirements.txt .
+
+# Actualizar pip y instalar dependencias
+RUN python -m pip install --upgrade pip; \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copiar código de la aplicación
+COPY . .
+
+# Crear directorio para uploads
+RUN New-Item -ItemType Directory -Path C:\app\uploads -Force
+
+# Exponer el puerto
+EXPOSE 3035
+
+# Variables de entorno
+ENV PYTHONUNBUFFERED=1
+
+# Comando para ejecutar la aplicación
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3035"]

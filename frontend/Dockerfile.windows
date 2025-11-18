@@ -1,0 +1,49 @@
+# Frontend Dockerfile for Windows Containers - Next.js
+# Usar Windows Server Core con Node.js
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+# Metadata
+LABEL maintainer="Avery Dennison Project"
+LABEL description="Next.js Frontend for Windows Containers"
+
+# Establecer PowerShell como shell predeterminado
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+# Instalar Node.js 18 LTS
+RUN Invoke-WebRequest -Uri 'https://nodejs.org/dist/v18.20.5/node-v18.20.5-x64.msi' -OutFile 'C:\nodejs.msi'; \
+    Start-Process msiexec.exe -ArgumentList '/i', 'C:\nodejs.msi', '/quiet', '/norestart' -Wait; \
+    Remove-Item 'C:\nodejs.msi' -Force
+
+# Verificar instalación
+RUN node --version; npm --version
+
+# Establecer directorio de trabajo
+WORKDIR C:\\app
+
+# Copiar archivos de dependencias
+COPY package.json package-lock.json* ./
+
+# Instalar dependencias
+RUN npm ci
+
+# Copiar código fuente
+COPY . .
+
+# Variables de entorno en tiempo de build
+ARG NEXT_PUBLIC_API_URL=http://localhost:3035
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Construir la aplicación
+RUN npm run build
+
+# Exponer el puerto
+EXPOSE 8035
+
+# Variables de entorno de producción
+ENV NODE_ENV=production
+ENV PORT=8035
+ENV HOSTNAME="0.0.0.0"
+
+# Comando para ejecutar la aplicación
+CMD ["npm", "start"]
