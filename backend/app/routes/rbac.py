@@ -35,6 +35,7 @@ def listar_roles(
     skip: int = 0,
     limit: int = 100,
     activo: bool = None,
+    estado: str = None,
     db: Session = Depends(get_db),
     _: Usuario = Depends(require_admin)
 ):
@@ -42,6 +43,8 @@ def listar_roles(
     query = db.query(Rol)
     if activo is not None:
         query = query.filter(Rol.activo == activo)
+    if estado is not None:
+        query = query.filter(Rol.estado == estado)
     return query.offset(skip).limit(limit).all()
 
 
@@ -62,7 +65,7 @@ def obtener_rol(
 def crear_rol(
     rol: RolCreate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_admin)
 ):
     """Crea un nuevo rol. Solo administradores."""
     # Verificar que el nombre no exista
@@ -72,7 +75,14 @@ def crear_rol(
             detail="Ya existe un rol con ese nombre"
         )
 
-    db_rol = Rol(**rol.dict())
+    # Crear rol con campos nuevos y legacy
+    rol_data = rol.dict()
+    db_rol = Rol(
+        nombre=rol_data['nombre'],
+        estado=rol_data.get('estado', 'activo'),
+        activo=rol_data.get('estado', 'activo') == 'activo',  # Sincronizar con campo legacy
+        usuario_control=current_user.id
+    )
     db.add(db_rol)
     db.commit()
     db.refresh(db_rol)
@@ -84,7 +94,7 @@ def actualizar_rol(
     rol_id: int,
     rol_update: RolUpdate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_admin)
 ):
     """Actualiza un rol existente. Solo administradores."""
     db_rol = db.query(Rol).filter(Rol.id == rol_id).first()
@@ -101,8 +111,16 @@ def actualizar_rol(
                 detail="Ya existe un rol con ese nombre"
             )
 
+    # Actualizar campos
     for field, value in update_data.items():
         setattr(db_rol, field, value)
+
+    # Sincronizar estado con activo
+    if "estado" in update_data:
+        db_rol.activo = update_data["estado"] == "activo"
+
+    # Actualizar usuario_control
+    db_rol.usuario_control = current_user.id
 
     db.commit()
     db.refresh(db_rol)
@@ -113,7 +131,7 @@ def actualizar_rol(
 def eliminar_rol(
     rol_id: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_admin)
 ):
     """Desactiva un rol. Solo administradores."""
     db_rol = db.query(Rol).filter(Rol.id == rol_id).first()
@@ -128,8 +146,10 @@ def eliminar_rol(
             detail=f"No se puede eliminar el rol porque hay {usuarios_con_rol} usuario(s) activo(s) con este rol"
         )
 
-    # Desactivar en lugar de eliminar
+    # Desactivar en ambos campos
     db_rol.activo = False
+    db_rol.estado = 'inactivo'
+    db_rol.usuario_control = current_user.id
     db.commit()
     return None
 

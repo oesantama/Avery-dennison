@@ -9,6 +9,8 @@ export interface Usuario {
   creado_por?: number;
   fecha_creacion: string;
   fecha_actualizacion: string;
+  intentos_fallidos?: number;
+  bloqueado_hasta?: string;
 }
 
 export interface UsuarioCreate {
@@ -199,21 +201,19 @@ export interface TipoVehiculoUpdate {
 export interface Rol {
   id: number;
   nombre: string;
-  descripcion?: string;
-  activo: boolean;
-  fecha_creacion: string;
+  estado: 'activo' | 'inactivo';
+  fecha_control: string;
+  usuario_control?: number;
 }
 
 export interface RolCreate {
   nombre: string;
-  descripcion?: string;
-  activo?: boolean;
+  estado?: 'activo' | 'inactivo';
 }
 
 export interface RolUpdate {
   nombre?: string;
-  descripcion?: string;
-  activo?: boolean;
+  estado?: 'activo' | 'inactivo';
 }
 
 // Pages

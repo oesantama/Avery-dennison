@@ -6,13 +6,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import DataTable, { Column } from '@/components/ui/DataTable';
+import Modal from '@/components/ui/Modal';
 import { vehiculosApi, tiposVehiculoApi } from '@/lib/api';
 import type { Vehiculo, VehiculoCreate, TipoVehiculo } from '@/types';
 import { FiPlus, FiTruck } from 'react-icons/fi';
+import Toast from '@/components/ui/Toast';
+import { useToast } from '@/hooks/useToast';
 
 export default function VehiculosPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { toast, showToast, hideToast } = useToast();
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
   const [tiposVehiculo, setTiposVehiculo] = useState<TipoVehiculo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,8 +61,10 @@ export default function VehiculosPage() {
     try {
       if (editingId) {
         await vehiculosApi.update(editingId, formData);
+        showToast('Vehículo actualizado exitosamente', 'success');
       } else {
         await vehiculosApi.create(formData);
+        showToast('Vehículo creado exitosamente', 'success');
       }
       setShowForm(false);
       setEditingId(null);
@@ -67,7 +73,7 @@ export default function VehiculosPage() {
     } catch (error: any) {
       console.error('Error saving vehiculo:', error);
       const message = error?.response?.data?.detail || 'Error al guardar el vehículo';
-      alert(message);
+      showToast(message, 'error');
     }
   };
 
@@ -194,6 +200,9 @@ export default function VehiculosPage() {
 
   return (
     <DashboardLayout>
+      {toast.show && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -214,164 +223,170 @@ export default function VehiculosPage() {
           </button>
         </div>
 
-        {/* Create/Edit Form */}
-        {showForm && (
-          <Card title={editingId ? 'Editar Vehículo' : 'Nuevo Vehículo'}>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Placa *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.placa}
-                    onChange={(e) =>
-                      setFormData({ ...formData, placa: e.target.value.toUpperCase() })
-                    }
-                    placeholder="ABC123"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Tipo de Vehículo
-                  </label>
-                  <select
-                    value={formData.tipo_vehiculo_id || ''}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        tipo_vehiculo_id: e.target.value ? parseInt(e.target.value) : undefined,
-                      })
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
-                  >
-                    <option value="">Seleccione un tipo</option>
-                    {tiposVehiculo.map((tipo) => (
-                      <option key={tipo.id} value={tipo.id}>
-                        {tipo.descripcion}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Marca
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.marca}
-                    onChange={(e) =>
-                      setFormData({ ...formData, marca: e.target.value })
-                    }
-                    placeholder="Toyota, Ford, etc."
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Modelo
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.modelo}
-                    onChange={(e) =>
-                      setFormData({ ...formData, modelo: e.target.value })
-                    }
-                    placeholder="Hilux, F-150, etc."
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Año
-                  </label>
-                  <input
-                    type="number"
-                    min="1900"
-                    max={new Date().getFullYear() + 1}
-                    value={formData.anio}
-                    onChange={(e) =>
-                      setFormData({ ...formData, anio: parseInt(e.target.value) })
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Estado *
-                  </label>
-                  <select
-                    required
-                    value={formData.estado}
-                    onChange={(e) =>
-                      setFormData({ ...formData, estado: e.target.value as any })
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
-                  >
-                    <option value="disponible">Disponible</option>
-                    <option value="inactivo">Inactivo</option>
-                  </select>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Conductor Asignado
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.conductor_asignado}
-                    onChange={(e) =>
-                      setFormData({ ...formData, conductor_asignado: e.target.value })
-                    }
-                    placeholder="Nombre del conductor"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Observaciones
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={formData.observaciones}
-                    onChange={(e) =>
-                      setFormData({ ...formData, observaciones: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
+        {/* Create/Edit Modal */}
+        <Modal
+          isOpen={showForm}
+          onClose={() => {
+            setShowForm(false);
+            resetForm();
+          }}
+          title={editingId ? 'Editar Vehículo' : 'Nuevo Vehículo'}
+          size="lg"
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Placa *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.placa}
+                  onChange={(e) =>
+                    setFormData({ ...formData, placa: e.target.value.toUpperCase() })
+                  }
+                  placeholder="ABC123"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
+                />
               </div>
 
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    resetForm();
-                  }}
-                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Tipo de Vehículo
+                </label>
+                <select
+                  value={formData.tipo_vehiculo_id || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      tipo_vehiculo_id: e.target.value ? parseInt(e.target.value) : undefined,
+                    })
+                  }
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500"
-                >
-                  {editingId ? 'Actualizar' : 'Crear'} Vehículo
-                </button>
+                  <option value="">Seleccione un tipo</option>
+                  {tiposVehiculo.map((tipo) => (
+                    <option key={tipo.id} value={tipo.id}>
+                      {tipo.descripcion}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </form>
-          </Card>
-        )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Marca
+                </label>
+                <input
+                  type="text"
+                  value={formData.marca}
+                  onChange={(e) =>
+                    setFormData({ ...formData, marca: e.target.value })
+                  }
+                  placeholder="Toyota, Ford, etc."
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Modelo
+                </label>
+                <input
+                  type="text"
+                  value={formData.modelo}
+                  onChange={(e) =>
+                    setFormData({ ...formData, modelo: e.target.value })
+                  }
+                  placeholder="Hilux, F-150, etc."
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Año
+                </label>
+                <input
+                  type="number"
+                  min="1900"
+                  max={new Date().getFullYear() + 1}
+                  value={formData.anio}
+                  onChange={(e) =>
+                    setFormData({ ...formData, anio: parseInt(e.target.value) })
+                  }
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Estado *
+                </label>
+                <select
+                  required
+                  value={formData.estado}
+                  onChange={(e) =>
+                    setFormData({ ...formData, estado: e.target.value as any })
+                  }
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
+                >
+                  <option value="disponible">Disponible</option>
+                  <option value="inactivo">Inactivo</option>
+                </select>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Conductor Asignado
+                </label>
+                <input
+                  type="text"
+                  value={formData.conductor_asignado}
+                  onChange={(e) =>
+                    setFormData({ ...formData, conductor_asignado: e.target.value })
+                  }
+                  placeholder="Nombre del conductor"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Observaciones
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.observaciones}
+                  onChange={(e) =>
+                    setFormData({ ...formData, observaciones: e.target.value })
+                  }
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false);
+                  resetForm();
+                }}
+                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500"
+              >
+                {editingId ? 'Actualizar' : 'Crear'} Vehículo
+              </button>
+            </div>
+          </form>
+        </Modal>
 
         {/* Vehiculos List */}
         <Card title="Lista de Vehículos">
@@ -379,7 +394,6 @@ export default function VehiculosPage() {
             data={vehiculos}
             columns={columns}
             onEdit={handleEdit}
-            onDelete={(vehiculo) => handleDelete(vehiculo.id)}
             emptyMessage="No hay vehículos registrados"
             emptyIcon={<FiTruck className="mx-auto h-12 w-12 text-gray-400" />}
             searchPlaceholder="Buscar vehículo..."

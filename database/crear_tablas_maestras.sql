@@ -28,19 +28,28 @@ CREATE TABLE IF NOT EXISTS permisos_por_rol (
     UNIQUE(rol_id, page_id)
 );
 
+-- Función para actualizar fecha_control en tablas maestras
+CREATE OR REPLACE FUNCTION update_fecha_control_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.fecha_control = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 -- Trigger para actualizar fecha_control en tipos_vehiculo
 DROP TRIGGER IF EXISTS update_tipos_vehiculo_fecha_control ON tipos_vehiculo;
 CREATE TRIGGER update_tipos_vehiculo_fecha_control
 BEFORE UPDATE ON tipos_vehiculo
 FOR EACH ROW
-EXECUTE FUNCTION update_fecha_actualizacion_column();
+EXECUTE FUNCTION update_fecha_control_column();
 
 -- Trigger para actualizar fecha_control en permisos_por_rol
 DROP TRIGGER IF EXISTS update_permisos_por_rol_fecha_control ON permisos_por_rol;
 CREATE TRIGGER update_permisos_por_rol_fecha_control
 BEFORE UPDATE ON permisos_por_rol
 FOR EACH ROW
-EXECUTE FUNCTION update_fecha_actualizacion_column();
+EXECUTE FUNCTION update_fecha_control_column();
 
 -- Modificar tabla vehiculos para agregar tipo_vehiculo_id
 ALTER TABLE vehiculos ADD COLUMN IF NOT EXISTS tipo_vehiculo_id INTEGER REFERENCES tipos_vehiculo(id);

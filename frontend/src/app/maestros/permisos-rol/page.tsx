@@ -412,7 +412,6 @@ export default function PermisosRolPage() {
             data={permisos}
             columns={columns}
             onEdit={handleEdit}
-            onDelete={(permiso) => handleDelete(permiso.id)}
             emptyMessage="No hay permisos configurados"
             emptyIcon={<FiShield className="mx-auto h-12 w-12 text-gray-400" />}
             searchPlaceholder="Buscar permiso..."

@@ -219,6 +219,11 @@ export const usuariosApi = {
   delete: async (id: number): Promise<void> => {
     await api.delete(`/api/usuarios/${id}`);
   },
+
+  desbloquear: async (id: number): Promise<{ message: string; usuario_id: number }> => {
+    const response = await api.post(`/api/usuarios/${id}/desbloquear`);
+    return response.data;
+  },
 };
 
 // Roles APIs

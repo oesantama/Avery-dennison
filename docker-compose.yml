@@ -9,6 +9,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: yourpassword
       POSTGRES_DB: vehiculos_operacion
+      TZ: America/Bogota
+      PGTZ: America/Bogota
     ports:
       - "5432:5432"
     volumes:
@@ -36,6 +38,7 @@ services:
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
       UPLOAD_DIR: uploads
+      TZ: America/Bogota
     volumes:
       - ./backend:/app
       - backend_uploads:/app/uploads
@@ -58,6 +61,7 @@ services:
       - "8035:8035"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:3035
+      - TZ=America/Bogota
       - NODE_ENV=production
     # NO usar volúmenes en producción - se usa el build standalone
     depends_on:

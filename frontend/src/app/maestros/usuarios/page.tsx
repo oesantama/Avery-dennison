@@ -8,7 +8,7 @@ import Card from '@/components/ui/Card';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { usuariosApi, rolesApi } from '@/lib/api';
 import type { UsuarioConRol, UsuarioCreate, UsuarioUpdate, Rol } from '@/types';
-import { FiPlus, FiUsers } from 'react-icons/fi';
+import { FiPlus, FiUsers, FiUnlock } from 'react-icons/fi';
 
 export default function UsuariosPage() {
   const router = useRouter();
@@ -119,6 +119,21 @@ export default function UsuariosPage() {
     }
   };
 
+  const handleDesbloquear = async (id: number) => {
+    if (!confirm('¿Está seguro de que desea desbloquear este usuario?')) {
+      return;
+    }
+    try {
+      await usuariosApi.desbloquear(id);
+      alert('Usuario desbloqueado exitosamente');
+      loadData();
+    } catch (error: any) {
+      console.error('Error desbloqueando usuario:', error);
+      const message = error?.response?.data?.detail || 'Error al desbloquear el usuario';
+      alert(message);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       username: '',
@@ -144,6 +159,11 @@ export default function UsuariosPage() {
 
   const getActivoLabel = (activo: boolean) => {
     return activo ? 'Activo' : 'Inactivo';
+  };
+
+  const esBloqueado = (usuario: UsuarioConRol) => {
+    if (!usuario.bloqueado_hasta) return false;
+    return new Date(usuario.bloqueado_hasta) > new Date();
   };
 
   // Definir columnas de la tabla
@@ -175,13 +195,20 @@ export default function UsuariosPage() {
       label: 'Estado',
       sortable: true,
       render: (usuario) => (
-        <span
-          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getActivoBadge(
-            usuario.activo
-          )}`}
-        >
-          {getActivoLabel(usuario.activo)}
-        </span>
+        <div className="flex flex-col gap-1">
+          <span
+            className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getActivoBadge(
+              usuario.activo
+            )}`}
+          >
+            {getActivoLabel(usuario.activo)}
+          </span>
+          {esBloqueado(usuario) && (
+            <span className="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-red-100 text-red-800">
+              Bloqueado ({usuario.intentos_fallidos} intentos)
+            </span>
+          )}
+        </div>
       ),
     },
   ];
@@ -389,7 +416,19 @@ export default function UsuariosPage() {
             data={usuarios}
             columns={columns}
             onEdit={handleEdit}
-            onDelete={(usuario) => handleDelete(usuario.id)}
+            customActions={(usuario) => (
+              <>
+                {esBloqueado(usuario) && (
+                  <button
+                    onClick={() => handleDesbloquear(usuario.id)}
+                    className="text-orange-600 hover:text-orange-900 inline-flex items-center"
+                    title="Desbloquear usuario"
+                  >
+                    <FiUnlock className="h-4 w-4" />
+                  </button>
+                )}
+              </>
+            )}
             emptyMessage="No hay usuarios registrados"
             emptyIcon={<FiUsers className="mx-auto h-12 w-12 text-gray-400" />}
             searchPlaceholder="Buscar usuario..."

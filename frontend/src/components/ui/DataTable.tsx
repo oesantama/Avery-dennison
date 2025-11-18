@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { FiSearch, FiDownload, FiChevronUp, FiChevronDown } from 'react-icons/fi';
+import * as XLSX from 'xlsx';
 
 export interface Column<T> {
   key: string;
@@ -15,6 +16,7 @@ interface DataTableProps<T> {
   columns: Column<T>[];
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void;
+  customActions?: (item: T) => React.ReactNode;
   emptyMessage?: string;
   emptyIcon?: React.ReactNode;
   searchPlaceholder?: string;
@@ -25,6 +27,7 @@ export default function DataTable<T extends Record<string, any>>({
   columns,
   onEdit,
   onDelete,
+  customActions,
   emptyMessage = 'No hay datos disponibles',
   emptyIcon,
   searchPlaceholder = 'Buscar...',
@@ -84,54 +87,58 @@ export default function DataTable<T extends Record<string, any>>({
     }
   };
 
-  // Función para exportar a CSV
+  // Función para exportar a Excel XLSX
   const handleExport = () => {
     if (sortedData.length === 0) {
       alert('No hay datos para exportar');
       return;
     }
 
-    // Crear encabezados
-    const headers = columns.map((col) => col.label).join(',');
+    // Preparar datos para Excel
+    const dataToExport = sortedData.map((item) => {
+      const row: Record<string, any> = {};
+      columns.forEach((col) => {
+        let value = item[col.key];
 
-    // Crear filas
-    const rows = sortedData.map((item) => {
-      return columns
-        .map((col) => {
-          let value = item[col.key];
-
-          // Manejar valores especiales
-          if (value === null || value === undefined) {
-            value = '';
-          } else if (typeof value === 'object') {
-            value = JSON.stringify(value);
+        // Manejar valores especiales
+        if (value === null || value === undefined) {
+          value = '';
+        } else if (typeof value === 'boolean') {
+          value = value ? 'Sí' : 'No';
+        } else if (typeof value === 'object') {
+          // Si es fecha, formatear
+          if (value instanceof Date) {
+            value = value.toLocaleDateString('es-CO');
           } else {
-            value = String(value);
+            value = JSON.stringify(value);
           }
+        } else if (typeof value === 'string' && value.includes('T') && !isNaN(Date.parse(value))) {
+          // Si parece una fecha ISO, formatearla
+          value = new Date(value).toLocaleDateString('es-CO');
+        } else {
+          value = String(value);
+        }
 
-          // Escapar comillas y encerrar en comillas si contiene coma
-          if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-            value = `"${value.replace(/"/g, '""')}"`;
-          }
-
-          return value;
-        })
-        .join(',');
+        row[col.label] = value;
+      });
+      return row;
     });
 
-    // Combinar todo
-    const csv = [headers, ...rows].join('\n');
+    // Crear workbook y worksheet
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Datos');
 
-    // Crear blob y descargar
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `export_${new Date().getTime()}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Ajustar ancho de columnas
+    const columnWidths = columns.map((col) => ({
+      wch: Math.max(col.label.length + 2, 15),
+    }));
+    worksheet['!cols'] = columnWidths;
+
+    // Generar archivo XLSX
+    const timestamp = new Date().toLocaleDateString('es-CO').replace(/\//g, '-');
+    const filename = `exportacion_${timestamp}.xlsx`;
+    XLSX.writeFile(workbook, filename);
   };
 
   if (data.length === 0) {
@@ -164,7 +171,7 @@ export default function DataTable<T extends Record<string, any>>({
           className="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500"
         >
           <FiDownload className="mr-2 h-4 w-4" />
-          Exportar
+          Exportar a Excel
         </button>
       </div>
 
@@ -202,7 +209,7 @@ export default function DataTable<T extends Record<string, any>>({
                   </div>
                 </th>
               ))}
-              {(onEdit || onDelete) && (
+              {(onEdit || onDelete || customActions) && (
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Acciones
                 </th>
@@ -213,7 +220,7 @@ export default function DataTable<T extends Record<string, any>>({
             {sortedData.length === 0 ? (
               <tr>
                 <td
-                  colSpan={columns.length + (onEdit || onDelete ? 1 : 0)}
+                  colSpan={columns.length + (onEdit || onDelete || customActions ? 1 : 0)}
                   className="px-6 py-12 text-center text-sm text-gray-500"
                 >
                   No se encontraron resultados para &quot;{searchTerm}&quot;
@@ -230,7 +237,7 @@ export default function DataTable<T extends Record<string, any>>({
                       {column.render ? column.render(item) : item[column.key]}
                     </td>
                   ))}
-                  {(onEdit || onDelete) && (
+                  {(onEdit || onDelete || customActions) && (
                     <td className="whitespace-nowrap px-6 py-4 text-sm font-medium space-x-3">
                       {onEdit && (
                         <button
@@ -272,6 +279,7 @@ export default function DataTable<T extends Record<string, any>>({
                           </svg>
                         </button>
                       )}
+                      {customActions && customActions(item)}
                     </td>
                   )}
                 </tr>
