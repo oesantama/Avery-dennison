@@ -12,6 +12,7 @@ import type { Vehiculo, VehiculoCreate, TipoVehiculo } from '@/types';
 import { FiPlus, FiTruck } from 'react-icons/fi';
 import Toast from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
+import SimpleLoader from '@/components/ui/SimpleLoader';
 
 export default function VehiculosPage() {
   const router = useRouter();
@@ -92,19 +93,6 @@ export default function VehiculosPage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('¿Está seguro de que desea eliminar este vehículo?')) {
-      return;
-    }
-    try {
-      await vehiculosApi.delete(id);
-      loadData();
-    } catch (error) {
-      console.error('Error deleting vehiculo:', error);
-      alert('Error al eliminar el vehículo');
-    }
-  };
-
   const resetForm = () => {
     setFormData({
       placa: '',
@@ -146,37 +134,37 @@ export default function VehiculosPage() {
       key: 'marca',
       label: 'Marca',
       sortable: true,
-      render: (vehiculo) => vehiculo.marca || '-',
+      render: (value) => (value as string) || '-',
     },
     {
       key: 'modelo',
       label: 'Modelo',
       sortable: true,
-      render: (vehiculo) => vehiculo.modelo || '-',
+      render: (value) => (value as string) || '-',
     },
     {
       key: 'tipo_vehiculo_id',
       label: 'Tipo',
       sortable: true,
-      render: (vehiculo) => getTipoNombre(vehiculo.tipo_vehiculo_id),
+      render: (value) => getTipoNombre(value as number),
     },
     {
       key: 'anio',
       label: 'Año',
       sortable: true,
-      render: (vehiculo) => vehiculo.anio || '-',
+      render: (value) => (value as number) || '-',
     },
     {
       key: 'estado',
       label: 'Estado',
       sortable: true,
-      render: (vehiculo) => (
+      render: (value) => (
         <span
           className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getEstadoBadge(
-            vehiculo.estado
+            value as string
           )}`}
         >
-          {getEstadoLabel(vehiculo.estado)}
+          {getEstadoLabel(value as string)}
         </span>
       ),
     },
@@ -184,18 +172,12 @@ export default function VehiculosPage() {
       key: 'conductor_asignado',
       label: 'Conductor',
       sortable: true,
-      render: (vehiculo) => vehiculo.conductor_asignado || '-',
+      render: (value) => (value as string) || '-',
     },
   ];
 
   if (authLoading || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold">Cargando...</h2>
-        </div>
-      </div>
-    );
+    return <SimpleLoader message="Cargando vehículos..." />;
   }
 
   return (

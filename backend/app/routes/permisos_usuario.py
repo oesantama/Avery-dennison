@@ -15,7 +15,7 @@ class PermisoBulkCreate(BaseModel):
     puede_ver: bool
     puede_crear: bool
     puede_editar: bool
-    puede_borrar: bool
+    puede_borrar: bool  # Frontend envía puede_borrar, mapeamos a puede_eliminar
 
 @router.get("/", response_model=List[PermisoUsuarioResponse])
 def list_permisos_usuario(
@@ -37,7 +37,7 @@ def list_permisos_usuario(
     permisos = query.offset(skip).limit(limit).all()
     return permisos
 
-@router.get("/usuario/{usuario_id}", response_model=List[PermisoUsuarioResponse])
+@router.get("/usuario/{usuario_id}")
 def get_permisos_by_usuario(
     usuario_id: int,
     db: Session = Depends(get_db),
@@ -47,7 +47,22 @@ def get_permisos_by_usuario(
     permisos = db.query(PermisosUsuario).filter(
         PermisosUsuario.usuario_id == usuario_id
     ).all()
-    return permisos
+    
+    # Transformar para mapear puede_eliminar -> puede_borrar
+    return [
+        {
+            "id": p.id,
+            "usuario_id": p.usuario_id,
+            "page_id": p.page_id,
+            "puede_ver": p.puede_ver,
+            "puede_crear": p.puede_crear,
+            "puede_editar": p.puede_editar,
+            "puede_borrar": p.puede_eliminar,  # Mapeo: eliminar -> borrar
+            "fecha_creacion": p.fecha_creacion,
+            "fecha_actualizacion": p.fecha_actualizacion
+        }
+        for p in permisos
+    ]
 
 @router.post("/usuario/{usuario_id}/bulk", status_code=status.HTTP_201_CREATED)
 def create_bulk_permisos_usuario(
@@ -83,7 +98,7 @@ def create_bulk_permisos_usuario(
             puede_ver=permiso_data.puede_ver,
             puede_crear=permiso_data.puede_crear,
             puede_editar=permiso_data.puede_editar,
-            puede_borrar=permiso_data.puede_borrar
+            puede_eliminar=permiso_data.puede_borrar  # Mapear puede_borrar -> puede_eliminar
         )
         db.add(permiso)
         nuevos_permisos.append(permiso)

@@ -13,6 +13,7 @@ import type { Page, PermisoRol, PermisoRolCreate, Rol } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FiPlus, FiShield } from 'react-icons/fi';
+import SimpleLoader from '@/components/ui/SimpleLoader';
 
 export default function PermisosRolPage() {
   const router = useRouter();
@@ -113,35 +114,6 @@ export default function PermisosRolPage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: number) => {
-    setConfirmDialog({
-      isOpen: true,
-      title: '¿Desactivar permiso?',
-      message:
-        '¿Está seguro que desea desactivar este permiso? Esta acción no se puede deshacer.',
-      onConfirm: async () => {
-        try {
-          await permisosRolApi.delete(id);
-          showToast('Permiso desactivado exitosamente', 'success');
-          loadData();
-        } catch (error: any) {
-          console.error('Error deleting permiso:', error);
-          const message =
-            error?.response?.data?.detail || 'Error al desactivar el permiso';
-          showToast(message, 'error');
-        } finally {
-          setConfirmDialog({
-            isOpen: false,
-            title: '',
-            message: '',
-            onConfirm: () => {},
-          });
-        }
-      },
-      type: 'danger',
-    });
-  };
-
   const resetForm = () => {
     setFormData({
       rol_id: 0,
@@ -181,20 +153,20 @@ export default function PermisosRolPage() {
       key: 'rol_id',
       label: 'Rol',
       sortable: true,
-      render: (permiso) => getRolNombre(permiso.rol_id),
+      render: (value) => getRolNombre(value as number),
     },
     {
       key: 'page_id',
       label: 'Página',
       sortable: true,
-      render: (permiso) => getPageNombre(permiso.page_id),
+      render: (value) => getPageNombre(value as number),
     },
     {
       key: 'puede_ver',
       label: 'Ver',
       sortable: true,
-      render: (permiso) =>
-        permiso.puede_ver ? (
+      render: (value) =>
+        value ? (
           <span className="text-green-600">✓</span>
         ) : (
           <span className="text-gray-300">-</span>
@@ -204,8 +176,8 @@ export default function PermisosRolPage() {
       key: 'puede_crear',
       label: 'Crear',
       sortable: true,
-      render: (permiso) =>
-        permiso.puede_crear ? (
+      render: (value) =>
+        value ? (
           <span className="text-green-600">✓</span>
         ) : (
           <span className="text-gray-300">-</span>
@@ -215,8 +187,8 @@ export default function PermisosRolPage() {
       key: 'puede_editar',
       label: 'Editar',
       sortable: true,
-      render: (permiso) =>
-        permiso.puede_editar ? (
+      render: (value) =>
+        value ? (
           <span className="text-green-600">✓</span>
         ) : (
           <span className="text-gray-300">-</span>
@@ -226,8 +198,8 @@ export default function PermisosRolPage() {
       key: 'puede_borrar',
       label: 'Borrar',
       sortable: true,
-      render: (permiso) =>
-        permiso.puede_borrar ? (
+      render: (value) =>
+        value ? (
           <span className="text-green-600">✓</span>
         ) : (
           <span className="text-gray-300">-</span>
@@ -237,26 +209,20 @@ export default function PermisosRolPage() {
       key: 'estado',
       label: 'Estado',
       sortable: true,
-      render: (permiso) => (
+      render: (value) => (
         <span
           className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getEstadoBadge(
-            permiso.estado
+            value as string
           )}`}
         >
-          {getEstadoLabel(permiso.estado)}
+          {getEstadoLabel(value as string)}
         </span>
       ),
     },
   ];
 
   if (authLoading || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold">Cargando...</h2>
-        </div>
-      </div>
-    );
+    return <SimpleLoader message="Cargando permisos..." />;
   }
 
   return (

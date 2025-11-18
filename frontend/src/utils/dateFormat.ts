@@ -4,20 +4,24 @@
 
 /**
  * Formatea una fecha en formato colombiano: DD/MM/YYYY HH:MM AM/PM
- * La fecha viene del backend ya en timezone de Colombia, solo formateamos sin conversión
+ * La fecha viene del backend ya en timezone de Colombia con offset -05:00
  */
 export const formatDateTimeColombian = (date: string | Date): string => {
   if (!date) return '-';
   
-  // Si es string, parseamos directamente sin conversión de timezone
   let dateObj: Date;
   if (typeof date === 'string') {
-    // Si la fecha tiene timezone (+00:00 o Z), la parseamos y extraemos los valores en Colombia
+    // Parsear la fecha que viene con timezone de Colombia
     dateObj = new Date(date);
     
-    // Convertimos a string en timezone de Colombia
-    const colombiaDate = new Date(dateObj.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
-    dateObj = colombiaDate;
+    // Si la fecha viene con timezone (-05:00), necesitamos ajustar para mostrar
+    // la hora correcta de Colombia en el navegador
+    const offset = dateObj.getTimezoneOffset(); // minutos de diferencia con UTC
+    const colombiaOffset = 300; // Colombia está UTC-5 = 300 minutos
+    const adjustMinutes = offset - colombiaOffset;
+    
+    // Crear nueva fecha ajustada
+    dateObj = new Date(dateObj.getTime() + (adjustMinutes * 60000));
   } else {
     dateObj = date;
   }
@@ -46,23 +50,37 @@ export const formatDateTimeColombian = (date: string | Date): string => {
 export const formatDateColombian = (date: string | Date): string => {
   if (!date) return '-';
   
-  let dateObj: Date;
+  let day: number, month: number, year: number;
+  
   if (typeof date === 'string') {
-    dateObj = new Date(date);
-    const colombiaDate = new Date(dateObj.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
-    dateObj = colombiaDate;
+    // Si es una fecha en formato YYYY-MM-DD (sin hora), parseamos directamente sin conversión
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const [yearStr, monthStr, dayStr] = date.split('-');
+      year = parseInt(yearStr);
+      month = parseInt(monthStr);
+      day = parseInt(dayStr);
+    } else {
+      // Si tiene hora/timestamp, usar conversión de zona horaria
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) return '-';
+      
+      const colombiaDate = new Date(dateObj.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+      day = colombiaDate.getDate();
+      month = colombiaDate.getMonth() + 1;
+      year = colombiaDate.getFullYear();
+    }
   } else {
-    dateObj = date;
+    // Si es Date object
+    if (isNaN(date.getTime())) return '-';
+    day = date.getDate();
+    month = date.getMonth() + 1;
+    year = date.getFullYear();
   }
   
-  // Verificar si la fecha es válida
-  if (isNaN(dateObj.getTime())) return '-';
+  const dayStr = String(day).padStart(2, '0');
+  const monthStr = String(month).padStart(2, '0');
   
-  const day = String(dateObj.getDate()).padStart(2, '0');
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const year = dateObj.getFullYear();
-  
-  return `${day}/${month}/${year}`;
+  return `${dayStr}/${monthStr}/${year}`;
 };
 
 /**

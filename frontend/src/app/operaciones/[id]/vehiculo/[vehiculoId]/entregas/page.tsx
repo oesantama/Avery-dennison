@@ -10,6 +10,7 @@ import type { Entrega, OperacionDiaria, VehiculoOperacion } from '@/types';
 import { formatDateTimeColombian, formatDateColombian } from '@/utils/dateFormat';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import SimpleLoader from '@/components/ui/SimpleLoader';
 import {
   FiArrowLeft,
   FiCamera,
@@ -161,13 +162,7 @@ export default function VehiculoEntregasPage() {
   };
 
   if (authLoading || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold">Cargando...</h2>
-        </div>
-      </div>
-    );
+    return <SimpleLoader message="Cargando entregas del vehículo..." />;
   }
 
   if (!operacion || !vehiculo) {

@@ -12,6 +12,7 @@ import type { TipoVehiculo, TipoVehiculoCreate } from '@/types';
 import { FiPlus, FiTool } from 'react-icons/fi';
 import Toast from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
+import SimpleLoader from '@/components/ui/SimpleLoader';
 
 export default function TiposVehiculoPage() {
   const router = useRouter();
@@ -75,19 +76,6 @@ export default function TiposVehiculoPage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('¿Está seguro de que desea inactivar este tipo de vehículo?')) {
-      return;
-    }
-    try {
-      await tiposVehiculoApi.delete(id);
-      loadTipos();
-    } catch (error) {
-      console.error('Error deleting tipo:', error);
-      alert('Error al eliminar el tipo de vehículo');
-    }
-  };
-
   const resetForm = () => {
     setFormData({
       descripcion: '',
@@ -118,13 +106,13 @@ export default function TiposVehiculoPage() {
       key: 'estado',
       label: 'Estado',
       sortable: true,
-      render: (tipo) => (
+      render: (value) => (
         <span
           className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getEstadoBadge(
-            tipo.estado
+            value as string
           )}`}
         >
-          {tipo.estado === 'activo' ? 'Activo' : 'Inactivo'}
+          {(value as string) === 'activo' ? 'Activo' : 'Inactivo'}
         </span>
       ),
     },
@@ -132,18 +120,12 @@ export default function TiposVehiculoPage() {
       key: 'fecha_control',
       label: 'Fecha Control',
       sortable: true,
-      render: (tipo) => new Date(tipo.fecha_control).toLocaleDateString(),
+      render: (value) => new Date(value as string).toLocaleDateString('es-CO'),
     },
   ];
 
   if (authLoading || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold">Cargando...</h2>
-        </div>
-      </div>
-    );
+    return <SimpleLoader message="Cargando tipos de vehículo..." />;
   }
 
   return (

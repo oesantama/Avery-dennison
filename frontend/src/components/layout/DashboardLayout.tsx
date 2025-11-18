@@ -20,6 +20,7 @@ import {
   FiUsers,
   FiX,
 } from 'react-icons/fi';
+import PageLoader from '@/components/ui/PageLoader';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -31,9 +32,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, loading: authLoading, logout } = useAuth();
   const { permissions, loading: permLoading, hasPermission } = usePermissions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [maestrosOpen, setMaestrosOpen] = useState(true);
+  const [maestrosOpen, setMaestrosOpen] = useState(false); // Inicia cerrado
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [lastPathname, setLastPathname] = useState(pathname);
 
   // ✅ TODOS LOS HOOKS DEBEN IR ANTES DE CUALQUIER RETURN
   // Memoize navigation arrays
@@ -131,9 +134,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       return;
     }
 
-    // Verificar permiso para la ruta actual
-    if (!hasPermission(pathname)) {
-      console.warn(`Usuario sin permiso para: ${pathname}`);
+    // Extraer la ruta base (sin IDs dinámicos) para validar permisos
+    // Ej: /operaciones/6 -> /operaciones
+    // Ej: /operaciones/2/vehiculo/5/entregas -> /consultas/entregas (mapeo especial)
+    const getBasePath = (path: string): string => {
+      // Mapeos especiales de rutas anidadas a permisos registrados
+      if (path.includes('/entregas')) {
+        return 'consultas/entregas';
+      }
+      
+      // Eliminar TODOS los segmentos numéricos de la ruta
+      return path
+        .split('/')
+        .filter(segment => segment && !/^\d+$/.test(segment))
+        .join('/');
+    };
+
+    const basePath = '/' + getBasePath(pathname);
+
+    // Verificar permiso para la ruta base
+    if (!hasPermission(basePath) && !hasPermission(pathname)) {
+      console.warn(`Usuario sin permiso para: ${pathname} (base: ${basePath})`);
 
       // Redirigir a la primera página permitida
       const priorityPages = [
@@ -164,16 +185,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     router,
   ]);
 
+  // ✅ Detectar cambio de ruta para mostrar loading instantáneo
+  useEffect(() => {
+    if (pathname !== lastPathname) {
+      setIsNavigating(false);
+      setLastPathname(pathname);
+    }
+  }, [pathname, lastPathname]);
+
+  // Función para manejar navegación con loading instantáneo
+  const handleNavigation = (href: string) => {
+    if (pathname !== href) {
+      setIsNavigating(true);
+      router.push(href);
+    }
+  };
+
   // ✅ Mostrar loading mientras se verifica (DESPUÉS de todos los hooks)
   if (authLoading || permLoading || checking) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Verificando permisos...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Verificando permisos..." />;
+  }
+
+  // ✅ Mostrar loading durante navegación
+  if (isNavigating) {
+    return <PageLoader message="Cargando página..." />;
   }
 
   return (
@@ -206,10 +241,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   const Icon = item.icon;
                   const isActive = pathname === item.href;
                   return (
-                    <Link
+                    <button
                       key={item.name}
-                      href={item.href}
-                      className={`group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                      onClick={() => handleNavigation(item.href)}
+                      className={`group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 w-full text-left ${
                         isActive
                           ? 'bg-primary-50 text-primary-700 shadow-sm'
                           : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
@@ -228,7 +263,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                           {item.badge}
                         </span>
                       )}
-                    </Link>
+                    </button>
                   );
                 })}
 
@@ -264,10 +299,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                           const Icon = item.icon;
                           const isActive = pathname === item.href;
                           return (
-                            <Link
+                            <button
                               key={item.name}
-                              href={item.href}
-                              className={`group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                              onClick={() => handleNavigation(item.href)}
+                              className={`group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 w-full text-left ${
                                 isActive
                                   ? 'bg-primary-50 text-primary-700'
                                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -281,7 +316,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                 }`}
                               />
                               {item.name}
-                            </Link>
+                            </button>
                           );
                         })}
                       </div>
@@ -385,11 +420,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   const Icon = item.icon;
                   const isActive = pathname === item.href;
                   return (
-                    <Link
+                    <button
                       key={item.name}
-                      href={item.href}
-                      onClick={() => setSidebarOpen(false)}
-                      className={`group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        handleNavigation(item.href);
+                      }}
+                      className={`group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all w-full text-left ${
                         isActive
                           ? 'bg-primary-50 text-primary-700'
                           : 'text-gray-700 hover:bg-gray-50'
@@ -401,7 +438,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         }`}
                       />
                       {item.name}
-                    </Link>
+                    </button>
                   );
                 })}
 
@@ -426,11 +463,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                           const Icon = item.icon;
                           const isActive = pathname === item.href;
                           return (
-                            <Link
+                            <button
                               key={item.name}
-                              href={item.href}
-                              onClick={() => setSidebarOpen(false)}
-                              className={`group flex items-center rounded-lg px-3 py-2 text-sm font-medium ${
+                              onClick={() => {
+                                setSidebarOpen(false);
+                                handleNavigation(item.href);
+                              }}
+                              className={`group flex items-center rounded-lg px-3 py-2 text-sm font-medium w-full text-left ${
                                 isActive
                                   ? 'bg-primary-50 text-primary-700'
                                   : 'text-gray-600 hover:bg-gray-50'
@@ -444,7 +483,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                 }`}
                               />
                               {item.name}
-                            </Link>
+                            </button>
                           );
                         })}
                       </div>

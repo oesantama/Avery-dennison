@@ -10,6 +10,7 @@ import { formatDateColombian } from '@/utils/dateFormat';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { FiPackage, FiPlus, FiSearch, FiTruck } from 'react-icons/fi';
+import SimpleLoader from '@/components/ui/SimpleLoader';
 
 export default function OperacionDetailPage() {
   const router = useRouter();
@@ -157,13 +158,7 @@ export default function OperacionDetailPage() {
   };
 
   if (authLoading || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold">Cargando...</h2>
-        </div>
-      </div>
-    );
+    return <SimpleLoader message="Cargando operación..." />;
   }
 
   if (!operacion) {
@@ -224,7 +219,20 @@ export default function OperacionDetailPage() {
         {isOperacionToday() && (
           <div className="flex justify-end">
             <button
-              onClick={() => setShowForm(!showForm)}
+              onClick={() => {
+                // Establecer hora actual automáticamente
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const currentTime = `${hours}:${minutes}`;
+                
+                setFormData({
+                  placa: '',
+                  hora_inicio: currentTime,
+                  observacion: '',
+                });
+                setShowForm(!showForm);
+              }}
               className="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500"
             >
               <FiPlus className="mr-2 h-5 w-5" />
@@ -311,7 +319,22 @@ export default function OperacionDetailPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Hora de Inicio (opcional)
+                  Fecha de Inicio de Operación
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value={formatDateColombian(operacion.fecha_operacion)}
+                  className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm sm:text-sm px-3 py-2 border text-gray-700 cursor-not-allowed"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  El vehículo iniciará operación en esta fecha
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Hora de Inicio
                 </label>
                 <input
                   type="time"
@@ -323,7 +346,7 @@ export default function OperacionDetailPage() {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  Deje vacío para usar la hora actual
+                  Se establece automáticamente con la hora actual. Puede modificarla si lo desea.
                 </p>
               </div>
 

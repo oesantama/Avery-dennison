@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FiDownload, FiEye, FiPlus, FiSearch } from 'react-icons/fi';
 import { formatDateColombian } from '@/utils/dateFormat';
+import SimpleLoader from '@/components/ui/SimpleLoader';
 
 export default function OperacionesPage() {
   const router = useRouter();
@@ -108,13 +109,7 @@ export default function OperacionesPage() {
   };
 
   if (authLoading || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold">Cargando...</h2>
-        </div>
-      </div>
-    );
+    return <SimpleLoader message="Cargando operaciones..." />;
   }
 
   return (

@@ -41,9 +41,22 @@ async def obtener_kpis(
     total_vehiculos = vehiculos_query.scalar() or 0
     total_entregas = entregas_query.scalar() or 0
 
-    # Entregas by status
-    entregas_pendientes_query = db.query(func.count(Entrega.id)).filter(Entrega.estado == "pendiente")
-    entregas_cumplidas_query = db.query(func.count(Entrega.id)).filter(Entrega.estado == "cumplido")
+    # ✅ Today's date - usando zona horaria de Colombia
+    hoy = datetime.now(ZoneInfo("America/Bogota")).date()
+
+    # ✅ Entregas by status - SOLO DEL DÍA DE HOY (no histórico)
+    entregas_pendientes_query = db.query(func.count(Entrega.id)).filter(
+        and_(
+            Entrega.estado == "pendiente",
+            Entrega.fecha_operacion == hoy  # ✅ Solo hoy
+        )
+    )
+    entregas_cumplidas_query = db.query(func.count(Entrega.id)).filter(
+        and_(
+            Entrega.estado == "cumplido",
+            Entrega.fecha_operacion == hoy  # ✅ Solo hoy
+        )
+    )
 
     if fecha_inicio and fecha_fin:
         entregas_pendientes_query = entregas_pendientes_query.filter(
@@ -56,20 +69,19 @@ async def obtener_kpis(
     entregas_pendientes = entregas_pendientes_query.scalar() or 0
     entregas_cumplidas = entregas_cumplidas_query.scalar() or 0
 
-    # Calculate percentage
+    # ✅ Calculate percentage based on TODAY's deliveries only
+    entregas_hoy_total = entregas_pendientes + entregas_cumplidas
     porcentaje_cumplimiento = (
-        (entregas_cumplidas / total_entregas * 100) if total_entregas > 0 else 0
+        (entregas_cumplidas / entregas_hoy_total * 100) if entregas_hoy_total > 0 else 0
     )
 
-    # Today's stats - usando zona horaria de Colombia
-    hoy = datetime.now(ZoneInfo("America/Bogota")).date()
+    # ✅ Vehículos activos hoy
     vehiculos_activos_hoy = db.query(func.count(VehiculoOperacion.id)).join(OperacionDiaria).filter(
         OperacionDiaria.fecha_operacion == hoy
     ).scalar() or 0
 
-    entregas_hoy = db.query(func.count(Entrega.id)).filter(
-        Entrega.fecha_operacion == hoy
-    ).scalar() or 0
+    # ✅ Total de entregas de hoy (para la card)
+    entregas_hoy = entregas_hoy_total
 
     return DashboardKPIs(
         total_operaciones=total_operaciones,

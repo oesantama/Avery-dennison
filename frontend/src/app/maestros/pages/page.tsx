@@ -265,15 +265,7 @@ export default function PagesPage() {
               Gestión de páginas y rutas del sistema
             </p>
           </div>
-          {canCreatePage && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 transition-colors"
-            >
-              <FiPlus className="h-5 w-5" />
-              Nueva Página
-            </button>
-          )}
+          {/* Botón Nueva Página oculto por ahora */}
         </div>
 
         {/* Data Table */}
@@ -283,26 +275,13 @@ export default function PagesPage() {
             data={pages}
             customActions={(page: PageType) => (
               <div className="flex items-center gap-2">
-                {(canEditPage || canViewPage) && (
+                {canViewPage && (
                   <button
                     onClick={() => handleEdit(page)}
-                    className={`p-2 rounded-lg transition-colors ${
-                      canEditPage
-                        ? 'text-blue-600 hover:bg-blue-50'
-                        : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                    title={canEditPage ? 'Editar' : 'Ver'}
+                    className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                    title="Ver"
                   >
-                    {canEditPage ? <FiEdit2 className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
-                  </button>
-                )}
-                {canDeletePage && (
-                  <button
-                    onClick={() => handleDelete(page.id)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Eliminar"
-                  >
-                    <FiTrash2 className="h-4 w-4" />
+                    <FiEye className="h-4 w-4" />
                   </button>
                 )}
               </div>

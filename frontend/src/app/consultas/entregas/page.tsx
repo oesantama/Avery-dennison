@@ -9,6 +9,7 @@ import type { Entrega } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FiDownload, FiEye, FiFileText, FiSearch } from 'react-icons/fi';
+import SimpleLoader from '@/components/ui/SimpleLoader';
 import {
   formatDateTimeColombian,
   formatDateColombian,
@@ -443,13 +444,7 @@ export default function ConsultaEntregasPage() {
   };
 
   if (authLoading || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold">Cargando...</h2>
-        </div>
-      </div>
-    );
+    return <SimpleLoader message="Cargando entregas..." />;
   }
 
   return (

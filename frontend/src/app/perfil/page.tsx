@@ -8,6 +8,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import { usuariosApi } from '@/lib/api';
 import { FiUser, FiMail, FiPhone, FiLock, FiSave } from 'react-icons/fi';
+import SimpleLoader from '@/components/ui/SimpleLoader';
 
 export default function PerfilPage() {
   const router = useRouter();
@@ -96,13 +97,7 @@ export default function PerfilPage() {
   };
 
   if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold">Cargando...</h2>
-        </div>
-      </div>
-    );
+    return <SimpleLoader message="Cargando perfil..." />;
   }
 
   if (!user) {

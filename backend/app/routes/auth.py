@@ -91,10 +91,10 @@ async def get_my_permissions(
         page = db.query(Page).filter(Page.id == p.page_id).first()
         if page:
             permisos_detallados[page.ruta] = {
-                "puede_ver": p.puede_ver,
-                "puede_crear": p.puede_crear,
-                "puede_editar": p.puede_editar,
-                "puede_borrar": p.puede_borrar
+                "puede_ver": p.puede_ver or False,
+                "puede_crear": p.puede_crear or False,
+                "puede_editar": p.puede_editar or False,
+                "puede_borrar": p.puede_eliminar or False
             }
     
     # ✅ SIEMPRE agregar /dashboard como permiso obligatorio (todos los permisos)

@@ -5,17 +5,15 @@ from datetime import datetime
 class PermisoUsuarioBase(BaseModel):
     usuario_id: int
     page_id: int
-    estado: Optional[str] = 'activo'
     puede_ver: Optional[bool] = False
     puede_crear: Optional[bool] = False
     puede_editar: Optional[bool] = False
-    puede_borrar: Optional[bool] = False
+    puede_borrar: Optional[bool] = False  # Frontend usa puede_borrar
 
 class PermisoUsuarioCreate(PermisoUsuarioBase):
     pass
 
 class PermisoUsuarioUpdate(BaseModel):
-    estado: Optional[str] = None
     puede_ver: Optional[bool] = None
     puede_crear: Optional[bool] = None
     puede_editar: Optional[bool] = None
@@ -23,8 +21,10 @@ class PermisoUsuarioUpdate(BaseModel):
 
 class PermisoUsuarioResponse(PermisoUsuarioBase):
     id: int
-    fecha_control: datetime
-    usuario_control: Optional[int] = None
+    fecha_creacion: Optional[datetime] = None
+    fecha_actualizacion: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+        # Mapear puede_eliminar del modelo a puede_borrar en el response
+        populate_by_name = True
