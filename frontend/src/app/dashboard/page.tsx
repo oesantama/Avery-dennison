@@ -36,9 +36,7 @@ export default function DashboardPage() {
         dashboardApi.getKPIs(),
         // ✅ Filtrar entregas solo de hoy
         entregasApi.list({ 
-          limit: 10,
-          fecha_operacion_inicio: hoy,
-          fecha_operacion_fin: hoy
+          limit: 10
         }),
       ]);
       setKpis(kpisData);
