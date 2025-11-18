@@ -1,19 +1,26 @@
-# Frontend Dockerfile para desarrollo - Next.js
+# Frontend Dockerfile para desarrollo - Next.js con Hot-Reload
 FROM node:18-alpine
+
+# Instalar libc6-compat para compatibilidad
+RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-# Instalar dependencias
+# Copiar archivos de dependencias primero (mejor caching)
 COPY package.json package-lock.json* ./
+
+# Instalar dependencias (solo una vez al hacer build)
 RUN npm ci
 
-# Copiar archivos del proyecto
+# Copiar archivos para que existan al inicio
 COPY . .
 
 EXPOSE 8035
 
-ENV PORT 8035
-ENV HOSTNAME "0.0.0.0"
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=8035
+ENV HOSTNAME="0.0.0.0"
 
-# Modo desarrollo con hot-reload
+# Comando para iniciar en modo desarrollo
 CMD ["npm", "run", "dev", "--", "-p", "8035", "-H", "0.0.0.0"]

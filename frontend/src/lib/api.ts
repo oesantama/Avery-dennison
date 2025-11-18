@@ -1,38 +1,41 @@
-import axios from 'axios';
 import type {
   AuthToken,
+  DashboardFilters,
+  DashboardKPIs,
+  Entrega,
+  EntregaCreate,
+  EntregaUpdate,
   LoginCredentials,
-  Usuario,
-  UsuarioCreate,
-  UsuarioUpdate,
-  UsuarioConRol,
   OperacionDiaria,
   OperacionDiariaCreate,
-  VehiculoOperacion,
-  VehiculoOperacionCreate,
-  Vehiculo,
-  VehiculoCreate,
-  VehiculoUpdate,
-  TipoVehiculo,
-  TipoVehiculoCreate,
-  TipoVehiculoUpdate,
-  Rol,
-  RolCreate,
-  RolUpdate,
   Page,
   PageCreate,
   PageUpdate,
   PermisoRol,
   PermisoRolCreate,
   PermisoRolUpdate,
-  Entrega,
-  EntregaCreate,
-  EntregaUpdate,
-  DashboardKPIs,
-  DashboardFilters,
+  PermisoUsuario,
+  PermisoUsuarioCreate,
+  PermisoUsuarioUpdate,
+  Rol,
+  RolCreate,
+  RolUpdate,
+  TipoVehiculo,
+  TipoVehiculoCreate,
+  TipoVehiculoUpdate,
+  Usuario,
+  UsuarioConRol,
+  UsuarioCreate,
+  UsuarioUpdate,
+  Vehiculo,
+  VehiculoCreate,
+  VehiculoOperacion,
+  VehiculoOperacionCreate,
+  VehiculoUpdate,
 } from '@/types';
+import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3035';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -84,6 +87,13 @@ export const authApi = {
     return response.data;
   },
 
+  getMyPermissions: async (): Promise<{ pages: string[] }> => {
+    const response = await api.get<{ pages: string[] }>(
+      '/api/auth/my-permissions'
+    );
+    return response.data;
+  },
+
   logout: async (): Promise<void> => {
     try {
       await api.post('/api/auth/logout');
@@ -107,7 +117,9 @@ export const operacionesApi = {
     fecha_inicio?: string;
     fecha_fin?: string;
   }): Promise<OperacionDiaria[]> => {
-    const response = await api.get<OperacionDiaria[]>('/api/operaciones/', { params });
+    const response = await api.get<OperacionDiaria[]>('/api/operaciones/', {
+      params,
+    });
     return response.data;
   },
 
@@ -116,13 +128,20 @@ export const operacionesApi = {
     return response.data;
   },
 
-  addVehiculo: async (data: VehiculoOperacionCreate): Promise<VehiculoOperacion> => {
-    const response = await api.post<VehiculoOperacion>('/api/operaciones/vehiculos', data);
+  addVehiculo: async (
+    data: VehiculoOperacionCreate
+  ): Promise<VehiculoOperacion> => {
+    const response = await api.post<VehiculoOperacion>(
+      '/api/operaciones/vehiculos',
+      data
+    );
     return response.data;
   },
 
   listVehiculos: async (operacionId: number): Promise<VehiculoOperacion[]> => {
-    const response = await api.get<VehiculoOperacion[]>(`/api/operaciones/vehiculos/${operacionId}`);
+    const response = await api.get<VehiculoOperacion[]>(
+      `/api/operaciones/vehiculos/${operacionId}`
+    );
     return response.data;
   },
 };
@@ -162,7 +181,10 @@ export const vehiculosApi = {
 // Tipos de Vehículo APIs
 export const tiposVehiculoApi = {
   create: async (data: TipoVehiculoCreate): Promise<TipoVehiculo> => {
-    const response = await api.post<TipoVehiculo>('/api/maestros/tipos-vehiculo/', data);
+    const response = await api.post<TipoVehiculo>(
+      '/api/maestros/tipos-vehiculo/',
+      data
+    );
     return response.data;
   },
 
@@ -171,17 +193,28 @@ export const tiposVehiculoApi = {
     limit?: number;
     estado?: string;
   }): Promise<TipoVehiculo[]> => {
-    const response = await api.get<TipoVehiculo[]>('/api/maestros/tipos-vehiculo/', { params });
+    const response = await api.get<TipoVehiculo[]>(
+      '/api/maestros/tipos-vehiculo/',
+      { params }
+    );
     return response.data;
   },
 
   get: async (id: number): Promise<TipoVehiculo> => {
-    const response = await api.get<TipoVehiculo>(`/api/maestros/tipos-vehiculo/${id}`);
+    const response = await api.get<TipoVehiculo>(
+      `/api/maestros/tipos-vehiculo/${id}`
+    );
     return response.data;
   },
 
-  update: async (id: number, data: TipoVehiculoUpdate): Promise<TipoVehiculo> => {
-    const response = await api.put<TipoVehiculo>(`/api/maestros/tipos-vehiculo/${id}`, data);
+  update: async (
+    id: number,
+    data: TipoVehiculoUpdate
+  ): Promise<TipoVehiculo> => {
+    const response = await api.put<TipoVehiculo>(
+      `/api/maestros/tipos-vehiculo/${id}`,
+      data
+    );
     return response.data;
   },
 
@@ -202,7 +235,9 @@ export const usuariosApi = {
     limit?: number;
     activo?: boolean;
   }): Promise<UsuarioConRol[]> => {
-    const response = await api.get<UsuarioConRol[]>('/api/usuarios', { params });
+    const response = await api.get<UsuarioConRol[]>('/api/usuarios', {
+      params,
+    });
     return response.data;
   },
 
@@ -220,7 +255,9 @@ export const usuariosApi = {
     await api.delete(`/api/usuarios/${id}`);
   },
 
-  desbloquear: async (id: number): Promise<{ message: string; usuario_id: number }> => {
+  desbloquear: async (
+    id: number
+  ): Promise<{ message: string; usuario_id: number }> => {
     const response = await api.post(`/api/usuarios/${id}/desbloquear`);
     return response.data;
   },
@@ -291,7 +328,7 @@ export const pagesApi = {
 // Permisos por Rol APIs
 export const permisosRolApi = {
   create: async (data: PermisoRolCreate): Promise<PermisoRol> => {
-    const response = await api.post<PermisoRol>('/api/maestros/permisos-rol/', data);
+    const response = await api.post<PermisoRol>('/api/permisos-rol', data);
     return response.data;
   },
 
@@ -302,22 +339,24 @@ export const permisosRolApi = {
     page_id?: number;
     estado?: string;
   }): Promise<PermisoRol[]> => {
-    const response = await api.get<PermisoRol[]>('/api/maestros/permisos-rol/', { params });
+    const response = await api.get<PermisoRol[]>('/api/permisos-rol', {
+      params,
+    });
     return response.data;
   },
 
   get: async (id: number): Promise<PermisoRol> => {
-    const response = await api.get<PermisoRol>(`/api/maestros/permisos-rol/${id}`);
+    const response = await api.get<PermisoRol>(`/api/permisos-rol/${id}`);
     return response.data;
   },
 
   update: async (id: number, data: PermisoRolUpdate): Promise<PermisoRol> => {
-    const response = await api.put<PermisoRol>(`/api/maestros/permisos-rol/${id}`, data);
+    const response = await api.put<PermisoRol>(`/api/permisos-rol/${id}`, data);
     return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await api.delete(`/api/maestros/permisos-rol/${id}`);
+    await api.delete(`/api/permisos-rol/${id}`);
   },
 };
 
@@ -365,7 +404,9 @@ export const dashboardApi = {
     fecha_inicio?: string;
     fecha_fin?: string;
   }): Promise<DashboardKPIs> => {
-    const response = await api.get<DashboardKPIs>('/api/dashboard/kpis', { params });
+    const response = await api.get<DashboardKPIs>('/api/dashboard/kpis', {
+      params,
+    });
     return response.data;
   },
 
@@ -373,6 +414,63 @@ export const dashboardApi = {
     const response = await api.get<Entrega[]>('/api/dashboard/entregas', {
       params: filters,
     });
+    return response.data;
+  },
+};
+
+// Permisos Usuario APIs (nuevo)
+export const permisosUsuarioApi = {
+  // Obtener permisos de un usuario específico
+  getByUsuario: async (usuarioId: number): Promise<PermisoUsuario[]> => {
+    const response = await api.get<PermisoUsuario[]>(
+      `/api/permisos-usuario/usuario/${usuarioId}`
+    );
+    return response.data;
+  },
+
+  // Crear permiso para usuario
+  create: async (data: PermisoUsuarioCreate): Promise<PermisoUsuario> => {
+    const response = await api.post<PermisoUsuario>(
+      '/api/permisos-usuario',
+      data
+    );
+    return response.data;
+  },
+
+  // Crear múltiples permisos para un usuario (bulk)
+  createBulk: async (
+    usuarioId: number,
+    permisos: PermisoUsuarioCreate[]
+  ): Promise<PermisoUsuario[]> => {
+    const response = await api.post<PermisoUsuario[]>(
+      `/api/permisos-usuario/usuario/${usuarioId}/bulk`,
+      permisos
+    );
+    return response.data;
+  },
+
+  // Actualizar permiso de usuario
+  update: async (
+    id: number,
+    data: PermisoUsuarioUpdate
+  ): Promise<PermisoUsuario> => {
+    const response = await api.put<PermisoUsuario>(
+      `/api/permisos-usuario/${id}`,
+      data
+    );
+    return response.data;
+  },
+
+  // Eliminar permiso de usuario
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/permisos-usuario/${id}`);
+  },
+
+  // Sincronizar permisos de usuario con los del rol
+  syncWithRol: async (usuarioId: number): Promise<PermisoUsuario[]> => {
+    const response = await api.post<PermisoUsuario[]>(
+      `/api/permisos-usuario/usuario/${usuarioId}/sync-rol`
+    );
     return response.data;
   },
 };

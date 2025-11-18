@@ -383,6 +383,71 @@ def crear_permiso_usuario(
     return db_permiso
 
 
+@router.post("/api/permisos-usuario/bulk", response_model=List[PermisosUsuarioResponse], status_code=status.HTTP_201_CREATED)
+def crear_permisos_usuario_bulk(
+    permisos: List[PermisosUsuarioCreate],
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(require_admin)
+):
+    """Crea/actualiza permisos en lote para un usuario. Solo administradores."""
+    resultados = []
+    
+    for permiso in permisos:
+        # Verificar que el usuario existe
+        usuario = db.query(Usuario).filter(Usuario.id == permiso.usuario_id).first()
+        if not usuario:
+            raise HTTPException(status_code=404, detail=f"Usuario {permiso.usuario_id} no encontrado")
+
+        # Verificar que la página existe
+        page = db.query(Page).filter(Page.id == permiso.page_id).first()
+        if not page:
+            raise HTTPException(status_code=404, detail=f"Página {permiso.page_id} no encontrada")
+
+        # Verificar si ya existe el permiso
+        db_permiso = db.query(PermisosUsuario).filter(
+            PermisosUsuario.usuario_id == permiso.usuario_id,
+            PermisosUsuario.page_id == permiso.page_id
+        ).first()
+
+        if db_permiso:
+            # Actualizar
+            for field, value in permiso.dict().items():
+                setattr(db_permiso, field, value)
+        else:
+            # Crear nuevo
+            db_permiso = PermisosUsuario(**permiso.dict())
+            db.add(db_permiso)
+        
+        resultados.append(db_permiso)
+
+    db.commit()
+    for permiso in resultados:
+        db.refresh(permiso)
+    
+    return resultados
+
+
+@router.put("/api/permisos-usuario/{permiso_id}", response_model=PermisosUsuarioResponse)
+def actualizar_permiso_usuario(
+    permiso_id: int,
+    permiso: PermisosUsuarioUpdate,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(require_admin)
+):
+    """Actualiza un permiso específico de usuario. Solo administradores."""
+    db_permiso = db.query(PermisosUsuario).filter(PermisosUsuario.id == permiso_id).first()
+    if not db_permiso:
+        raise HTTPException(status_code=404, detail="Permiso no encontrado")
+
+    # Actualizar campos
+    for field, value in permiso.dict(exclude_unset=True).items():
+        setattr(db_permiso, field, value)
+
+    db.commit()
+    db.refresh(db_permiso)
+    return db_permiso
+
+
 @router.delete("/api/permisos-usuario/{permiso_id}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar_permiso_usuario(
     permiso_id: int,

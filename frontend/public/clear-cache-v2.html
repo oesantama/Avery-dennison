@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Limpiar Caché - Avery Dennison</title>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <h1>Limpiando caché...</h1>
+    <p id="status">Procesando...</p>
+    <script>
+      // Limpiar localStorage
+      localStorage.clear();
+
+      // Limpiar sessionStorage
+      sessionStorage.clear();
+
+      // Limpiar cookies
+      document.cookie.split(';').forEach(function (c) {
+        document.cookie = c
+          .replace(/^ +/, '')
+          .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
+      });
+
+      document.getElementById('status').innerHTML =
+        '✅ Caché limpiado exitosamente!<br><br>' +
+        '<a href="/maestros/usuarios" style="color: blue; text-decoration: underline;">Ir a Usuarios</a><br>' +
+        '<a href="/maestros/permisos-rol" style="color: blue; text-decoration: underline;">Ir a Permisos-Rol</a><br>' +
+        '<a href="/maestros/roles" style="color: blue; text-decoration: underline;">Ir a Roles</a>';
+
+      console.log('✅ Caché limpiado completamente');
+    </script>
+  </body>
+</html>

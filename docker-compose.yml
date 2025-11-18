@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Base de datos PostgreSQL
   db:
@@ -12,14 +10,14 @@ services:
       TZ: America/Bogota
       PGTZ: America/Bogota
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     networks:
       - vehiculos-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,7 +29,7 @@ services:
       dockerfile: Dockerfile
     container_name: vehiculos-backend
     ports:
-      - "3035:3035"
+      - '3035:3035'
     environment:
       DATABASE_URL: postgresql://postgres:yourpassword@db:5432/vehiculos_operacion
       SECRET_KEY: your-secret-key-here-change-in-production
@@ -49,25 +47,29 @@ services:
       - vehiculos-network
     command: uvicorn main:app --host 0.0.0.0 --port 3035 --reload
 
-  # Frontend Next.js (Modo Producción)
+  # Frontend Next.js (Modo Desarrollo con Hot-Reload)
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
       args:
         NEXT_PUBLIC_API_URL: http://localhost:3035
     container_name: vehiculos-frontend
     ports:
-      - "8035:8035"
+      - '8035:8035'
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:3035
       - TZ=America/Bogota
-      - NODE_ENV=production
-    # NO usar volúmenes en producción - se usa el build standalone
+      - NODE_ENV=development
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
     depends_on:
       - backend
     networks:
       - vehiculos-network
+    command: npm run dev -- -p 8035
 
 networks:
   vehiculos-network:

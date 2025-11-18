@@ -1,9 +1,15 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api';
-import type { Usuario, LoginCredentials } from '@/types';
+import type { LoginCredentials, Usuario } from '@/types';
+import { useRouter } from 'next/navigation';
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 interface AuthContextType {
   user: Usuario | null;
@@ -33,28 +39,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setLoading(true);
     const token = localStorage.getItem('token');
+    const lastCheck = localStorage.getItem('lastAuthCheck');
+    const now = Date.now();
+
+    // ✅ OPTIMIZACIÓN: Cachear validación por 5 minutos
+    if (token && lastCheck && now - parseInt(lastCheck) < 5 * 60 * 1000) {
+      const cachedUser = localStorage.getItem('cachedUser');
+      if (cachedUser) {
+        try {
+          setUser(JSON.parse(cachedUser));
+          setLoading(false);
+          return;
+        } catch (e) {
+          // Si falla el parse, continuar con la validación normal
+        }
+      }
+    }
+
     if (token) {
       try {
         const userData = await authApi.me();
         setUser(userData);
+        // ✅ Guardar en caché
+        localStorage.setItem('cachedUser', JSON.stringify(userData));
+        localStorage.setItem('lastAuthCheck', now.toString());
       } catch (error: any) {
         // Solo eliminar el token si es un error de autenticación (401)
-        // No eliminar por errores de red u otros problemas temporales
         if (error?.response?.status === 401) {
           console.log('Token inválido o expirado, cerrando sesión');
           localStorage.removeItem('token');
+          localStorage.removeItem('cachedUser');
+          localStorage.removeItem('lastAuthCheck');
           setUser(null);
         } else {
           // Para otros errores (red, servidor caído, etc), mantener el token
-          // y permitir que la UI intente usar las funcionalidades
-          console.warn('Error verificando autenticación (se mantendrá la sesión):', error?.message);
-          // No establecemos user=null para que la UI no redirija a login
-          // El interceptor de axios manejará errores 401 en futuras peticiones
+          console.warn(
+            'Error verificando autenticación (se mantendrá la sesión):',
+            error?.message
+          );
         }
       }
     } else {
-      // Si no hay token, asegurar que user sea null
       setUser(null);
+      localStorage.removeItem('cachedUser');
+      localStorage.removeItem('lastAuthCheck');
     }
     setLoading(false);
   };
@@ -67,6 +95,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const userData = await authApi.me();
       setUser(userData);
+      // ✅ Guardar en caché inmediatamente
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cachedUser', JSON.stringify(userData));
+        localStorage.setItem('lastAuthCheck', Date.now().toString());
+      }
       router.push('/dashboard');
     } catch (error) {
       throw new Error('Credenciales inválidas');
@@ -75,15 +108,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      // Llamar al endpoint de logout del backend
       await authApi.logout();
     } catch (error) {
-      // Continuar con logout local aunque falle el backend
       console.warn('Error en logout:', error);
     } finally {
-      // Siempre limpiar el estado local
+      // ✅ OPTIMIZACIÓN: Limpiar TODO el caché al cerrar sesión
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
+        localStorage.removeItem('cachedUser');
+        localStorage.removeItem('lastAuthCheck');
+        // Limpiar caché de datos
+        const keys = Object.keys(localStorage);
+        keys.forEach((key) => {
+          if (key.startsWith('cache_')) {
+            localStorage.removeItem(key);
+          }
+        });
       }
       setUser(null);
       router.push('/login');
@@ -93,7 +133,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Evitar errores de hidratación renderizando el mismo contenido en servidor y cliente
   if (!mounted) {
     return (
-      <AuthContext.Provider value={{ user: null, loading: true, login, logout }}>
+      <AuthContext.Provider
+        value={{ user: null, loading: true, login, logout }}
+      >
         {children}
       </AuthContext.Provider>
     );
