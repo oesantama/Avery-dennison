@@ -36,13 +36,12 @@ try {
     # Verificar que está en modo Windows Containers
     $dockerInfo = docker info 2>&1 | Select-String "OSType"
     if ($dockerInfo -match "windows") {
-        Write-Host "✅ Docker está en modo Windows Containers" -ForegroundColor Green
+        Write-Host "✅ Docker Engine está en modo Windows Containers" -ForegroundColor Green
     } else {
-        Write-Host "⚠️  Docker está en modo Linux Containers" -ForegroundColor Yellow
-        Write-Host "Cambiando a Windows Containers..." -ForegroundColor Yellow
-        & 'C:\Program Files\Docker\Docker\DockerCli.exe' -SwitchDaemon
-        Start-Sleep -Seconds 5
-        Write-Host "✅ Cambiado a Windows Containers" -ForegroundColor Green
+        Write-Host "❌ ERROR: Docker Engine está en modo Linux Containers" -ForegroundColor Red
+        Write-Host "Docker Engine nativo de Windows solo soporta Windows Containers" -ForegroundColor Yellow
+        Write-Host "El sistema ya está configurado correctamente para Windows Containers" -ForegroundColor Yellow
+        # No se puede cambiar de modo en Docker Engine sin Desktop
     }
 } catch {
     Write-Host "❌ ERROR: $_" -ForegroundColor Red
