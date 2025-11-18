@@ -1,23 +1,24 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { ReactNode, useCallback, useMemo, useState } from 'react';
 import {
-  FiHome,
-  FiTruck,
-  FiPackage,
-  FiLogOut,
   FiBarChart2,
-  FiMenu,
-  FiX,
-  FiSettings,
   FiChevronDown,
   FiChevronUp,
-  FiUsers,
+  FiHome,
+  FiLogOut,
+  FiMenu,
+  FiPackage,
+  FiSettings,
   FiShield,
-  FiTool
+  FiTool,
+  FiTruck,
+  FiUsers,
+  FiX,
 } from 'react-icons/fi';
 
 interface DashboardLayoutProps {
@@ -27,25 +28,61 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { permissions, hasPermission } = usePermissions();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [maestrosOpen, setMaestrosOpen] = useState(false);
   const [maestrosMobileOpen, setMaestrosMobileOpen] = useState(false);
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: FiHome },
-    { name: 'Operaciones', href: '/operaciones', icon: FiTruck },
-    { name: 'Entregas', href: '/entregas', icon: FiPackage },
-  ];
+  // Memoize navigation arrays to prevent recreation on every render
+  const navigation = useMemo(
+    () =>
+      [
+        { name: 'Dashboard', href: '/dashboard', icon: FiHome },
+        { name: 'Operaciones', href: '/operaciones', icon: FiTruck },
+        { name: 'Entregas', href: '/entregas', icon: FiPackage },
+      ].filter((item) => hasPermission(item.href)),
+    [hasPermission]
+  );
 
-  const maestrosSubmenu = [
-    { name: 'Vehículos', href: '/vehiculos', icon: FiTool },
-    { name: 'Tipos de Vehículo', href: '/maestros/tipos-vehiculo', icon: FiSettings },
-    { name: 'Usuarios', href: '/maestros/usuarios', icon: FiUsers },
-    { name: 'Roles', href: '/maestros/roles', icon: FiShield },
-    { name: 'Permisos por Rol', href: '/maestros/permisos-rol', icon: FiShield },
-  ];
+  const maestrosSubmenu = useMemo(
+    () =>
+      [
+        { name: 'Vehículos', href: '/vehiculos', icon: FiTool },
+        {
+          name: 'Tipos de Vehículo',
+          href: '/maestros/tipos-vehiculo',
+          icon: FiSettings,
+        },
+        { name: 'Usuarios', href: '/maestros/usuarios', icon: FiUsers },
+        { name: 'Roles', href: '/maestros/roles', icon: FiShield },
+        {
+          name: 'Permisos por Rol',
+          href: '/maestros/permisos-rol',
+          icon: FiShield,
+        },
+      ].filter((item) => hasPermission(item.href)),
+    [hasPermission]
+  );
 
-  const isMaestrosActive = maestrosSubmenu.some(item => pathname.startsWith(item.href) || pathname === item.href);
+  const isMaestrosActive = useMemo(
+    () =>
+      maestrosSubmenu.some(
+        (item) => pathname.startsWith(item.href) || pathname === item.href
+      ),
+    [pathname, maestrosSubmenu]
+  );
+
+  const handleMaestrosToggle = useCallback(() => {
+    setMaestrosOpen((prev) => !prev);
+  }, []);
+
+  const handleMobileMenuToggle = useCallback(() => {
+    setMobileMenuOpen((prev) => !prev);
+  }, []);
+
+  const handleMaestrosMobileToggle = useCallback(() => {
+    setMaestrosMobileOpen((prev) => !prev);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -86,51 +123,53 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   );
                 })}
 
-                {/* Maestros Dropdown */}
-                <div className="relative">
-                  <button
-                    onClick={() => setMaestrosOpen(!maestrosOpen)}
-                    className={`inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium transition-colors ${
-                      isMaestrosActive
-                        ? 'border-primary-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                    }`}
-                  >
-                    <FiSettings className="mr-2 h-5 w-5" />
-                    Maestros
-                    {maestrosOpen ? (
-                      <FiChevronUp className="ml-1 h-4 w-4" />
-                    ) : (
-                      <FiChevronDown className="ml-1 h-4 w-4" />
-                    )}
-                  </button>
+                {/* Maestros Dropdown - Solo si tiene permisos */}
+                {maestrosSubmenu.length > 0 && (
+                  <div className="relative">
+                    <button
+                      onClick={handleMaestrosToggle}
+                      className={`inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium transition-colors ${
+                        isMaestrosActive
+                          ? 'border-primary-500 text-gray-900'
+                          : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                    >
+                      <FiSettings className="mr-2 h-5 w-5" />
+                      Maestros
+                      {maestrosOpen ? (
+                        <FiChevronUp className="ml-1 h-4 w-4" />
+                      ) : (
+                        <FiChevronDown className="ml-1 h-4 w-4" />
+                      )}
+                    </button>
 
-                  {maestrosOpen && (
-                    <div className="absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-                      <div className="py-1">
-                        {maestrosSubmenu.map((item) => {
-                          const Icon = item.icon;
-                          const isActive = pathname === item.href;
-                          return (
-                            <Link
-                              key={item.name}
-                              href={item.href}
-                              onClick={() => setMaestrosOpen(false)}
-                              className={`flex items-center px-4 py-2 text-sm ${
-                                isActive
-                                  ? 'bg-primary-50 text-primary-600'
-                                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                              }`}
-                            >
-                              <Icon className="mr-3 h-5 w-5" />
-                              {item.name}
-                            </Link>
-                          );
-                        })}
+                    {maestrosOpen && (
+                      <div className="absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                        <div className="py-1">
+                          {maestrosSubmenu.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = pathname === item.href;
+                            return (
+                              <Link
+                                key={item.name}
+                                href={item.href}
+                                onClick={() => setMaestrosOpen(false)}
+                                className={`flex items-center px-4 py-2 text-sm ${
+                                  isActive
+                                    ? 'bg-primary-50 text-primary-600'
+                                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                                }`}
+                              >
+                                <Icon className="mr-3 h-5 w-5" />
+                                {item.name}
+                              </Link>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -151,7 +190,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Mobile menu button */}
             <div className="flex items-center md:hidden">
               <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                onClick={handleMobileMenuToggle}
                 className="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
                 aria-label="Abrir menú"
               >
@@ -189,54 +228,56 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 );
               })}
 
-              {/* Maestros Mobile Dropdown */}
-              <div>
-                <button
-                  onClick={() => setMaestrosMobileOpen(!maestrosMobileOpen)}
-                  className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-base font-medium transition-colors ${
-                    isMaestrosActive
-                      ? 'bg-primary-50 text-primary-600'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <FiSettings className="mr-3 h-5 w-5" />
-                    Maestros
-                  </div>
-                  {maestrosMobileOpen ? (
-                    <FiChevronUp className="h-4 w-4" />
-                  ) : (
-                    <FiChevronDown className="h-4 w-4" />
-                  )}
-                </button>
+              {/* Maestros Mobile Dropdown - Solo si tiene permisos */}
+              {maestrosSubmenu.length > 0 && (
+                <div>
+                  <button
+                    onClick={handleMaestrosMobileToggle}
+                    className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-base font-medium transition-colors ${
+                      isMaestrosActive
+                        ? 'bg-primary-50 text-primary-600'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <FiSettings className="mr-3 h-5 w-5" />
+                      Maestros
+                    </div>
+                    {maestrosMobileOpen ? (
+                      <FiChevronUp className="h-4 w-4" />
+                    ) : (
+                      <FiChevronDown className="h-4 w-4" />
+                    )}
+                  </button>
 
-                {maestrosMobileOpen && (
-                  <div className="ml-6 space-y-1 mt-1">
-                    {maestrosSubmenu.map((item) => {
-                      const Icon = item.icon;
-                      const isActive = pathname === item.href;
-                      return (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          onClick={() => {
-                            setMaestrosMobileOpen(false);
-                            setMobileMenuOpen(false);
-                          }}
-                          className={`flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                            isActive
-                              ? 'bg-primary-100 text-primary-700'
-                              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                          }`}
-                        >
-                          <Icon className="mr-3 h-4 w-4" />
-                          {item.name}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                  {maestrosMobileOpen && (
+                    <div className="ml-6 space-y-1 mt-1">
+                      {maestrosSubmenu.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = pathname === item.href;
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            onClick={() => {
+                              setMaestrosMobileOpen(false);
+                              setMobileMenuOpen(false);
+                            }}
+                            className={`flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                              isActive
+                                ? 'bg-primary-100 text-primary-700'
+                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                            }`}
+                          >
+                            <Icon className="mr-3 h-4 w-4" />
+                            {item.name}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Mobile User Info & Logout */}
               <div className="border-t border-gray-200 pt-4 mt-4">

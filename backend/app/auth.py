@@ -25,8 +25,37 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Usu
     user = db.query(Usuario).filter(Usuario.username == username).first()
     if not user:
         return None
+
+    # Verificar si el usuario está bloqueado
+    if user.bloqueado_hasta and user.bloqueado_hasta > datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Usuario bloqueado. Intente nuevamente después de {user.bloqueado_hasta.strftime('%Y-%m-%d %H:%M:%S')} UTC"
+        )
+
+    # Verificar contraseña
     if not verify_password(password, user.password_hash):
+        # Incrementar intentos fallidos
+        user.intentos_fallidos = (user.intentos_fallidos or 0) + 1
+
+        # Si llegó a 5 intentos, bloquear por 15 minutos
+        if user.intentos_fallidos >= 5:
+            user.bloqueado_hasta = datetime.utcnow() + timedelta(minutes=15)
+            db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Demasiados intentos fallidos. Usuario bloqueado por 15 minutos."
+            )
+
+        db.commit()
         return None
+
+    # Login exitoso - resetear intentos fallidos
+    if user.intentos_fallidos > 0 or user.bloqueado_hasta:
+        user.intentos_fallidos = 0
+        user.bloqueado_hasta = None
+        db.commit()
+
     return user
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):

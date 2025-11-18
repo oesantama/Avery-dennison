@@ -18,8 +18,24 @@ class Usuario(Base):
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     fecha_actualizacion = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    # Campos de bloqueo por intentos fallidos
+    intentos_fallidos = Column(Integer, default=0)
+    bloqueado_hasta = Column(DateTime(timezone=True), nullable=True)
+
     # Relaciones
-    rol = relationship("Rol", back_populates="usuarios")
-    creador = relationship("Usuario", remote_side=[id], foreign_keys=[creado_por])
-    permisos_especificos = relationship("PermisosUsuario", back_populates="usuario", cascade="all, delete-orphan")
+    rol = relationship(
+        "Rol",
+        back_populates="usuarios",
+        foreign_keys=[rol_id]
+    )
+    creador = relationship(
+        "Usuario",
+        remote_side=[id],
+        foreign_keys=[creado_por]
+    )
+    permisos_especificos = relationship(
+        "PermisosUsuario",
+        back_populates="usuario",
+        cascade="all, delete-orphan"
+    )
 

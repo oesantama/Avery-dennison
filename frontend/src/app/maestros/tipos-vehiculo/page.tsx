@@ -6,13 +6,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import DataTable, { Column } from '@/components/ui/DataTable';
+import Modal from '@/components/ui/Modal';
 import { tiposVehiculoApi } from '@/lib/api';
 import type { TipoVehiculo, TipoVehiculoCreate } from '@/types';
 import { FiPlus, FiTool } from 'react-icons/fi';
+import Toast from '@/components/ui/Toast';
+import { useToast } from '@/hooks/useToast';
 
 export default function TiposVehiculoPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { toast, showToast, hideToast } = useToast();
   const [tipos, setTipos] = useState<TipoVehiculo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -46,8 +50,10 @@ export default function TiposVehiculoPage() {
     try {
       if (editingId) {
         await tiposVehiculoApi.update(editingId, formData);
+        showToast('Tipo de vehículo actualizado exitosamente', 'success');
       } else {
         await tiposVehiculoApi.create(formData);
+        showToast('Tipo de vehículo creado exitosamente', 'success');
       }
       setShowForm(false);
       setEditingId(null);
@@ -56,7 +62,7 @@ export default function TiposVehiculoPage() {
     } catch (error: any) {
       console.error('Error saving tipo:', error);
       const message = error?.response?.data?.detail || 'Error al guardar el tipo de vehículo';
-      alert(message);
+      showToast(message, 'error');
     }
   };
 
@@ -142,6 +148,9 @@ export default function TiposVehiculoPage() {
 
   return (
     <DashboardLayout>
+      {toast.show && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -162,64 +171,70 @@ export default function TiposVehiculoPage() {
           </button>
         </div>
 
-        {/* Create/Edit Form */}
-        {showForm && (
-          <Card title={editingId ? 'Editar Tipo de Vehículo' : 'Nuevo Tipo de Vehículo'}>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Descripción *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.descripcion}
-                  onChange={(e) =>
-                    setFormData({ ...formData, descripcion: e.target.value })
-                  }
-                  placeholder="Ej: Camioneta, Camión, Furgón"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
-                />
-              </div>
+        {/* Create/Edit Modal */}
+        <Modal
+          isOpen={showForm}
+          onClose={() => {
+            setShowForm(false);
+            resetForm();
+          }}
+          title={editingId ? 'Editar Tipo de Vehículo' : 'Nuevo Tipo de Vehículo'}
+          size="md"
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Descripción *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.descripcion}
+                onChange={(e) =>
+                  setFormData({ ...formData, descripcion: e.target.value })
+                }
+                placeholder="Ej: Camioneta, Camión, Furgón"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900 placeholder:text-gray-400"
+              />
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Estado *
-                </label>
-                <select
-                  required
-                  value={formData.estado}
-                  onChange={(e) =>
-                    setFormData({ ...formData, estado: e.target.value as 'activo' | 'inactivo' })
-                  }
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
-                >
-                  <option value="activo">Activo</option>
-                  <option value="inactivo">Inactivo</option>
-                </select>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Estado *
+              </label>
+              <select
+                required
+                value={formData.estado}
+                onChange={(e) =>
+                  setFormData({ ...formData, estado: e.target.value as 'activo' | 'inactivo' })
+                }
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
+              >
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+              </select>
+            </div>
 
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    resetForm();
-                  }}
-                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500"
-                >
-                  {editingId ? 'Actualizar' : 'Crear'} Tipo
-                </button>
-              </div>
-            </form>
-          </Card>
-        )}
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false);
+                  resetForm();
+                }}
+                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500"
+              >
+                {editingId ? 'Actualizar' : 'Crear'} Tipo
+              </button>
+            </div>
+          </form>
+        </Modal>
 
         {/* Tipos List */}
         <Card title="Lista de Tipos de Vehículo">
@@ -227,7 +242,6 @@ export default function TiposVehiculoPage() {
             data={tipos}
             columns={columns}
             onEdit={handleEdit}
-            onDelete={(tipo) => handleDelete(tipo.id)}
             emptyMessage="No hay tipos de vehículo registrados"
             emptyIcon={<FiTool className="mx-auto h-12 w-12 text-gray-400" />}
             searchPlaceholder="Buscar tipo de vehículo..."

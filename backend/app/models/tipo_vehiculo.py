@@ -9,7 +9,7 @@ class TipoVehiculo(Base):
     id = Column(Integer, primary_key=True, index=True)
     descripcion = Column(String(100), unique=True, nullable=False)
     estado = Column(String(20), default='activo', index=True)
-    fecha_control = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    fecha_control = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     usuario_control = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
 
     # Relación con vehículos

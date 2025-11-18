@@ -258,3 +258,31 @@ def obtener_permisos_usuario(
     )
 
     return usuario_con_permisos
+
+@router.post("/{usuario_id}/desbloquear", status_code=status.HTTP_200_OK)
+def desbloquear_usuario(
+    usuario_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_admin)
+):
+    """
+    Desbloquea un usuario inmediatamente, reseteando intentos fallidos y tiempo de bloqueo.
+    Solo usuarios con rol 'Administrador' pueden desbloquear usuarios.
+    """
+    db_usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not db_usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # Resetear campos de bloqueo
+    db_usuario.intentos_fallidos = 0
+    db_usuario.bloqueado_hasta = None
+
+    db.commit()
+    db.refresh(db_usuario)
+
+    return {
+        "message": f"Usuario '{db_usuario.username}' desbloqueado exitosamente",
+        "usuario_id": usuario_id,
+        "intentos_fallidos": 0,
+        "bloqueado_hasta": None
+    }

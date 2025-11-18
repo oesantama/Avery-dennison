@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
-import { operacionesApi } from '@/lib/api';
-import type { OperacionDiaria, VehiculoOperacion } from '@/types';
-import { FiPlus, FiEye, FiDownload } from 'react-icons/fi';
+import { useAuth } from '@/contexts/AuthContext';
 import { useExportToExcel } from '@/hooks/useExportToExcel';
+import { operacionesApi } from '@/lib/api';
+import type { OperacionDiaria } from '@/types';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { FiDownload, FiEye, FiPlus, FiSearch } from 'react-icons/fi';
 
 export default function OperacionesPage() {
   const router = useRouter();
@@ -17,8 +17,19 @@ export default function OperacionesPage() {
   const [operaciones, setOperaciones] = useState<OperacionDiaria[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Helper function to get local date without timezone conversion
+  const getLocalDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [formData, setFormData] = useState({
-    fecha_operacion: new Date().toISOString().split('T')[0],
+    fecha_operacion: getLocalDateString(),
     cantidad_vehiculos_solicitados: 1,
     observacion: '',
   });
@@ -48,7 +59,7 @@ export default function OperacionesPage() {
       await operacionesApi.create(formData);
       setShowForm(false);
       setFormData({
-        fecha_operacion: new Date().toISOString().split('T')[0],
+        fecha_operacion: getLocalDateString(),
         cantidad_vehiculos_solicitados: 1,
         observacion: '',
       });
@@ -59,14 +70,30 @@ export default function OperacionesPage() {
     }
   };
 
+  // Filtrar operaciones por búsqueda
+  const filteredOperaciones = operaciones.filter((op) => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      new Date(op.fecha_operacion).toLocaleDateString().includes(searchLower) ||
+      op.cantidad_vehiculos_solicitados.toString().includes(searchLower) ||
+      (op.vehiculos?.length || 0).toString().includes(searchLower) ||
+      (op.observacion && op.observacion.toLowerCase().includes(searchLower))
+    );
+  });
+
   const handleExportToExcel = () => {
-    const dataToExport = operaciones.map((op) => ({
+    const dataToExport = filteredOperaciones.map((op) => ({
       Fecha: new Date(op.fecha_operacion).toLocaleDateString(),
       'Vehículos Solicitados': op.cantidad_vehiculos_solicitados,
       'Vehículos Iniciados': op.vehiculos?.length || 0,
       Observaciones: op.observacion || '-',
     }));
-    exportToExcel(dataToExport, `operaciones-${new Date().toISOString().split('T')[0]}`, 'Operaciones');
+    exportToExcel(
+      dataToExport,
+      `operaciones-${new Date().toISOString().split('T')[0]}`,
+      'Operaciones'
+    );
   };
 
   if (authLoading || loading) {
@@ -84,7 +111,9 @@ export default function OperacionesPage() {
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Operaciones Diarias</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              Operaciones Diarias
+            </h1>
             <p className="mt-1 sm:mt-2 text-sm text-gray-700">
               Gestión de vehículos necesarios para operaciones diarias
             </p>
@@ -129,11 +158,19 @@ export default function OperacionesPage() {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  Fecha actual: {new Date(formData.fecha_operacion).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  Fecha seleccionada:{' '}
+                  {(() => {
+                    // Parse fecha correctamente sin conversión UTC
+                    const [year, month, day] = formData.fecha_operacion
+                      .split('-')
+                      .map(Number);
+                    const localDate = new Date(year, month - 1, day);
+                    return localDate.toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    });
+                  })()}
                 </p>
               </div>
 
@@ -191,9 +228,33 @@ export default function OperacionesPage() {
 
         {/* Operaciones List */}
         <Card title="Lista de Operaciones">
-          {operaciones.length === 0 ? (
+          {/* Barra de búsqueda */}
+          <div className="mb-4">
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <FiSearch className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar operaciones..."
+                className="block w-full rounded-md border-gray-300 pl-10 pr-3 py-2 text-sm focus:border-primary-500 focus:ring-primary-500 border text-gray-900 placeholder:text-gray-400"
+              />
+            </div>
+            {searchTerm && (
+              <p className="mt-2 text-sm text-gray-500">
+                Mostrando {filteredOperaciones.length} de {operaciones.length}{' '}
+                operaciones
+              </p>
+            )}
+          </div>
+
+          {filteredOperaciones.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No hay operaciones registradas
+              {searchTerm
+                ? `No se encontraron operaciones para "${searchTerm}"`
+                : 'No hay operaciones registradas'}
             </div>
           ) : (
             <>
@@ -220,10 +281,12 @@ export default function OperacionesPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {operaciones.map((operacion) => (
+                    {filteredOperaciones.map((operacion) => (
                       <tr key={operacion.id} className="hover:bg-gray-50">
                         <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm font-medium text-gray-900">
-                          {new Date(operacion.fecha_operacion).toLocaleDateString()}
+                          {new Date(
+                            operacion.fecha_operacion
+                          ).toLocaleDateString()}
                         </td>
                         <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm text-gray-500">
                           {operacion.cantidad_vehiculos_solicitados}
@@ -236,7 +299,9 @@ export default function OperacionesPage() {
                         </td>
                         <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm font-medium">
                           <button
-                            onClick={() => router.push(`/operaciones/${operacion.id}`)}
+                            onClick={() =>
+                              router.push(`/operaciones/${operacion.id}`)
+                            }
                             className="text-primary-600 hover:text-primary-900 inline-flex items-center"
                           >
                             <FiEye className="mr-1 h-4 w-4" />
@@ -251,23 +316,34 @@ export default function OperacionesPage() {
 
               {/* Vista de tarjetas para móviles */}
               <div className="md:hidden space-y-4">
-                {operaciones.map((operacion) => (
-                  <div key={operacion.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                {filteredOperaciones.map((operacion) => (
+                  <div
+                    key={operacion.id}
+                    className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+                  >
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          {new Date(operacion.fecha_operacion).toLocaleDateString()}
+                          {new Date(
+                            operacion.fecha_operacion
+                          ).toLocaleDateString()}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          Solicitados: {operacion.cantidad_vehiculos_solicitados} | Iniciados: {operacion.vehiculos?.length || 0}
+                          Solicitados:{' '}
+                          {operacion.cantidad_vehiculos_solicitados} |
+                          Iniciados: {operacion.vehiculos?.length || 0}
                         </p>
                       </div>
                     </div>
                     {operacion.observacion && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{operacion.observacion}</p>
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                        {operacion.observacion}
+                      </p>
                     )}
                     <button
-                      onClick={() => router.push(`/operaciones/${operacion.id}`)}
+                      onClick={() =>
+                        router.push(`/operaciones/${operacion.id}`)
+                      }
                       className="w-full inline-flex items-center justify-center rounded-md bg-primary-50 px-3 py-2 text-sm font-semibold text-primary-600 hover:bg-primary-100"
                     >
                       <FiEye className="mr-2 h-4 w-4" />

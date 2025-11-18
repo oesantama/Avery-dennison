@@ -66,6 +66,34 @@ async def read_users_me(
 ):
     return current_user
 
+@router.get("/my-permissions")
+async def get_my_permissions(
+    current_user: Usuario = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Obtiene los permisos del usuario actual basado en su rol.
+    Retorna una lista de URLs de páginas a las que tiene acceso.
+    """
+    from app.models.permisos_rol import PermisoRol
+    from app.models.page import Page
+    
+    if not current_user.rol_id:
+        return {"pages": []}
+    
+    # Obtener permisos activos del rol
+    permisos = db.query(PermisoRol).filter(
+        PermisoRol.rol_id == current_user.rol_id,
+        PermisoRol.estado == "activo"
+    ).all()
+    
+    # Obtener URLs de las páginas permitidas
+    page_ids = [p.page_id for p in permisos]
+    pages = db.query(Page).filter(Page.id.in_(page_ids)).all()
+    page_urls = [page.url for page in pages]
+    
+    return {"pages": page_urls}
+
 @router.post("/logout")
 async def logout(
     current_user: Usuario = Depends(get_current_active_user)

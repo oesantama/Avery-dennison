@@ -10,8 +10,7 @@ from datetime import datetime
 
 class RolBase(BaseModel):
     nombre: str = Field(..., min_length=3, max_length=50, description="Nombre del rol")
-    descripcion: Optional[str] = Field(None, description="Descripción del rol")
-    activo: bool = Field(True, description="Si el rol está activo")
+    estado: str = Field('activo', description="Estado del rol: activo o inactivo")
 
 
 class RolCreate(RolBase):
@@ -20,11 +19,26 @@ class RolCreate(RolBase):
 
 class RolUpdate(BaseModel):
     nombre: Optional[str] = Field(None, min_length=3, max_length=50)
-    descripcion: Optional[str] = None
-    activo: Optional[bool] = None
+    estado: Optional[str] = None
 
 
 class RolResponse(RolBase):
+    id: int
+    fecha_control: datetime
+    usuario_control: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+# Legacy schemas para compatibilidad
+class RolBaseLegacy(BaseModel):
+    nombre: str = Field(..., min_length=3, max_length=50, description="Nombre del rol")
+    descripcion: Optional[str] = Field(None, description="Descripción del rol")
+    activo: bool = Field(True, description="Si el rol está activo")
+
+
+class RolResponseLegacy(RolBaseLegacy):
     id: int
     fecha_creacion: datetime
 

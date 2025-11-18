@@ -7,7 +7,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import { entregasApi, operacionesApi } from '@/lib/api';
 import type { Entrega, VehiculoOperacion } from '@/types';
-import { FiPlus, FiCheckCircle, FiUpload, FiImage, FiDownload } from 'react-icons/fi';
+import { FiPlus, FiCheckCircle, FiUpload, FiImage, FiDownload, FiSearch } from 'react-icons/fi';
 import { useExportToExcel } from '@/hooks/useExportToExcel';
 
 export default function EntregasPage() {
@@ -20,6 +20,7 @@ export default function EntregasPage() {
   const [vehiculos, setVehiculos] = useState<VehiculoOperacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedVehiculoId, setSelectedVehiculoId] = useState<number | null>(
     vehiculoIdParam ? parseInt(vehiculoIdParam) : null
   );
@@ -113,8 +114,21 @@ export default function EntregasPage() {
     }
   };
 
+  // Filtrar entregas por búsqueda
+  const filteredEntregas = entregas.filter((entrega) => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      entrega.numero_factura.toLowerCase().includes(searchLower) ||
+      (entrega.cliente && entrega.cliente.toLowerCase().includes(searchLower)) ||
+      (entrega.observacion && entrega.observacion.toLowerCase().includes(searchLower)) ||
+      entrega.estado.toLowerCase().includes(searchLower) ||
+      new Date(entrega.fecha_operacion).toLocaleDateString().includes(searchLower)
+    );
+  });
+
   const handleExportToExcel = () => {
-    const dataToExport = entregas.map((entrega) => ({
+    const dataToExport = filteredEntregas.map((entrega) => ({
       'N° Factura': entrega.numero_factura,
       'Cliente': entrega.cliente || '-',
       'Fecha Operación': new Date(entrega.fecha_operacion).toLocaleDateString(),
@@ -319,9 +333,30 @@ export default function EntregasPage() {
 
         {/* Entregas List */}
         <Card title="Lista de Entregas">
-          {entregas.length === 0 ? (
+          {/* Barra de búsqueda */}
+          <div className="mb-4">
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <FiSearch className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar entregas..."
+                className="block w-full rounded-md border-gray-300 pl-10 pr-3 py-2 text-sm focus:border-primary-500 focus:ring-primary-500 border text-gray-900 placeholder:text-gray-400"
+              />
+            </div>
+            {searchTerm && (
+              <p className="mt-2 text-sm text-gray-500">
+                Mostrando {filteredEntregas.length} de {entregas.length} entregas
+              </p>
+            )}
+          </div>
+
+          {filteredEntregas.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No hay entregas registradas
+              {searchTerm ? `No se encontraron entregas para "${searchTerm}"` : 'No hay entregas registradas'}
             </div>
           ) : (
             <>
@@ -351,7 +386,7 @@ export default function EntregasPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {entregas.map((entrega) => (
+                    {filteredEntregas.map((entrega) => (
                       <tr key={entrega.id} className="hover:bg-gray-50">
                         <td className="whitespace-nowrap px-4 lg:px-6 py-4 text-sm font-medium text-gray-900">
                           {entrega.numero_factura}
@@ -404,7 +439,7 @@ export default function EntregasPage() {
 
               {/* Vista de tarjetas para móviles */}
               <div className="md:hidden space-y-4">
-                {entregas.map((entrega) => (
+                {filteredEntregas.map((entrega) => (
                   <div key={entrega.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">

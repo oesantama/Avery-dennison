@@ -4,21 +4,28 @@ export interface Usuario {
   nombre_completo?: string;
   email: string;
   numero_celular?: string;
+  telefono?: string; // Alias para numero_celular
   rol_id: number;
   activo: boolean;
   creado_por?: number;
+  usuario_control?: number; // Alias para creado_por
   fecha_creacion: string;
   fecha_actualizacion: string;
+  fecha_control?: string; // Alias para fecha_actualizacion
+  intentos_fallidos?: number;
+  bloqueado_hasta?: string;
 }
 
 export interface UsuarioCreate {
   username: string;
+  password: string;
   nombre_completo?: string;
   email: string;
   numero_celular?: string;
+  telefono?: string;
   rol_id: number;
   activo?: boolean;
-  password: string;
+  permisos?: PermisoUsuarioCreate[]; // Permisos personalizados al crear
 }
 
 export interface UsuarioUpdate {
@@ -26,9 +33,11 @@ export interface UsuarioUpdate {
   nombre_completo?: string;
   email?: string;
   numero_celular?: string;
+  telefono?: string;
   rol_id?: number;
   activo?: boolean;
   password?: string;
+  permisos?: PermisoUsuarioCreate[]; // Actualizar permisos personalizados
 }
 
 export interface UsuarioConRol extends Usuario {
@@ -199,21 +208,19 @@ export interface TipoVehiculoUpdate {
 export interface Rol {
   id: number;
   nombre: string;
-  descripcion?: string;
-  activo: boolean;
-  fecha_creacion: string;
+  estado: 'activo' | 'inactivo';
+  fecha_control: string;
+  usuario_control?: number;
 }
 
 export interface RolCreate {
   nombre: string;
-  descripcion?: string;
-  activo?: boolean;
+  estado?: 'activo' | 'inactivo';
 }
 
 export interface RolUpdate {
   nombre?: string;
-  descripcion?: string;
-  activo?: boolean;
+  estado?: 'activo' | 'inactivo';
 }
 
 // Pages
@@ -276,4 +283,42 @@ export interface PermisoRolUpdate {
   puede_crear?: boolean;
   puede_editar?: boolean;
   puede_borrar?: boolean;
+}
+
+// Permisos por Usuario (nuevo)
+export interface PermisoUsuario {
+  id: number;
+  usuario_id: number;
+  page_id: number;
+  estado: 'activo' | 'inactivo';
+  puede_ver: boolean;
+  puede_crear: boolean;
+  puede_editar: boolean;
+  puede_borrar: boolean;
+  fecha_control: string;
+  usuario_control?: number;
+  page?: Page;
+}
+
+export interface PermisoUsuarioCreate {
+  usuario_id: number;
+  page_id: number;
+  estado?: 'activo' | 'inactivo';
+  puede_ver?: boolean;
+  puede_crear?: boolean;
+  puede_editar?: boolean;
+  puede_borrar?: boolean;
+}
+
+export interface PermisoUsuarioUpdate {
+  estado?: 'activo' | 'inactivo';
+  puede_ver?: boolean;
+  puede_crear?: boolean;
+  puede_editar?: boolean;
+  puede_borrar?: boolean;
+}
+
+// Usuario extendido con permisos personalizados
+export interface UsuarioCompleto extends UsuarioConRol {
+  permisos: PermisoUsuario[];
 }

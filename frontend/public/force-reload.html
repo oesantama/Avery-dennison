@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Force Reload - Avery Dennison</title>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+  </head>
+  <body style="font-family: Arial, sans-serif; padding: 20px">
+    <h1>🔄 Forzando Recarga Completa</h1>
+    <p id="status">Limpiando caché...</p>
+    <div id="links" style="margin-top: 20px"></div>
+
+    <script>
+      // Limpiar TODO el storage
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Limpiar cookies
+      document.cookie.split(';').forEach(function (c) {
+        document.cookie = c
+          .replace(/^ +/, '')
+          .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
+      });
+
+      // Limpiar caché del service worker si existe
+      if ('caches' in window) {
+        caches.keys().then(function (names) {
+          for (let name of names) {
+            caches.delete(name);
+          }
+        });
+      }
+
+      document.getElementById('status').innerHTML =
+        '✅ Caché limpiado! Haz clic en los enlaces (se abrirán sin caché):';
+
+      const timestamp = new Date().getTime();
+      const links = [
+        {
+          url: `/maestros/usuarios?nocache=${timestamp}`,
+          text: 'Usuarios (Modal debe aparecer)',
+        },
+        {
+          url: `/maestros/permisos-rol?nocache=${timestamp}`,
+          text: 'Permisos-Rol (Modal debe aparecer)',
+        },
+        {
+          url: `/maestros/roles?nocache=${timestamp}`,
+          text: 'Roles (Referencia - Modal funciona)',
+        },
+      ];
+
+      const linksDiv = document.getElementById('links');
+      links.forEach((link) => {
+        const a = document.createElement('a');
+        a.href = link.url;
+        a.textContent = '🔗 ' + link.text;
+        a.style.display = 'block';
+        a.style.margin = '10px 0';
+        a.style.padding = '10px';
+        a.style.background = '#4F46E5';
+        a.style.color = 'white';
+        a.style.textDecoration = 'none';
+        a.style.borderRadius = '5px';
+        a.target = '_blank';
+        linksDiv.appendChild(a);
+      });
+
+      console.log('✅ Caché y storage limpiados completamente');
+      console.log('✅ Service Worker cache limpiado');
+    </script>
+  </body>
+</html>
