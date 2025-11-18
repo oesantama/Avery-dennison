@@ -26,7 +26,7 @@ Write-Host ""
 Write-Host "[1/8] Verificando Docker Desktop..." -ForegroundColor Yellow
 
 try {
-    $dockerVersion = docker --version
+    $dockerVersion = docker --version 2>$null
     Write-Host "Docker instalado: $dockerVersion" -ForegroundColor Green
 } catch {
     Write-Host "ERROR: Docker no esta instalado o no esta en el PATH" -ForegroundColor Red
@@ -36,14 +36,106 @@ try {
 }
 
 # Verificar que Docker este corriendo
-try {
-    docker ps | Out-Null
-    Write-Host "Docker esta corriendo correctamente" -ForegroundColor Green
-} catch {
-    Write-Host "ERROR: Docker no esta corriendo" -ForegroundColor Red
-    Write-Host "Inicia Docker Desktop y espera a que este completamente cargado" -ForegroundColor Yellow
-    pause
-    exit 1
+Write-Host "Verificando que Docker Desktop este corriendo..." -ForegroundColor Cyan
+$dockerRunning = $false
+$maxRetries = 3
+$retryCount = 0
+
+while (-not $dockerRunning -and $retryCount -lt $maxRetries) {
+    try {
+        $result = docker ps 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            $dockerRunning = $true
+            Write-Host "Docker esta corriendo correctamente" -ForegroundColor Green
+        }
+    } catch {
+        $dockerRunning = $false
+    }
+    
+    if (-not $dockerRunning) {
+        $retryCount++
+        if ($retryCount -lt $maxRetries) {
+            Write-Host "Docker Desktop no esta corriendo. Intento $retryCount de $maxRetries..." -ForegroundColor Yellow
+            Write-Host ""
+            Write-Host "Verificando WSL2..." -ForegroundColor Cyan
+            
+            # Verificar y actualizar WSL2 si es necesario
+            try {
+                $wslStatus = wsl --status 2>&1
+                if ($wslStatus -match "No se encuentra el archivo de kernel WSL 2" -or $wslStatus -match "kernel.*not found") {
+                    Write-Host "WSL2 necesita actualizacion. Actualizando automaticamente..." -ForegroundColor Yellow
+                    wsl --update
+                    Write-Host "WSL2 actualizado. Reiniciando..." -ForegroundColor Green
+                    Start-Sleep -Seconds 3
+                }
+            } catch {
+                Write-Host "No se pudo verificar WSL2. Continuando..." -ForegroundColor Yellow
+            }
+            
+            Write-Host ""
+            Write-Host "PASOS PARA INICIAR DOCKER DESKTOP:" -ForegroundColor Cyan
+            Write-Host "1. Busca 'Docker Desktop' en el menu Inicio" -ForegroundColor White
+            Write-Host "2. Haz clic derecho y selecciona 'Ejecutar como administrador'" -ForegroundColor White
+            Write-Host "3. Espera a que el icono de Docker aparezca en la bandeja del sistema" -ForegroundColor White
+            Write-Host "4. El icono debe estar BLANCO (no gris) cuando este listo" -ForegroundColor White
+            Write-Host "5. Esto puede tomar 1-2 minutos" -ForegroundColor White
+            Write-Host ""
+            Write-Host "Presiona Enter cuando Docker Desktop este corriendo..." -ForegroundColor Yellow
+            Read-Host
+        } else {
+            Write-Host ""
+            Write-Host "============================================" -ForegroundColor Red
+            Write-Host "  ERROR: Docker Desktop NO esta corriendo" -ForegroundColor Red
+            Write-Host "============================================" -ForegroundColor Red
+            Write-Host ""
+            
+            # Verificar WSL2 antes de salir
+            Write-Host "Verificando WSL2..." -ForegroundColor Cyan
+            try {
+                $wslStatus = wsl --status 2>&1
+                if ($wslStatus -match "No se encuentra el archivo de kernel WSL 2" -or $wslStatus -match "kernel.*not found") {
+                    Write-Host ""
+                    Write-Host "PROBLEMA DETECTADO: WSL2 necesita actualizacion" -ForegroundColor Red
+                    Write-Host ""
+                    Write-Host "SOLUCION AUTOMATICA:" -ForegroundColor Yellow
+                    Write-Host "Ejecuta este comando en PowerShell como Administrador:" -ForegroundColor White
+                    Write-Host "  wsl --update" -ForegroundColor Cyan
+                    Write-Host ""
+                    Write-Host "Actualizando WSL2 ahora..." -ForegroundColor Yellow
+                    wsl --update
+                    Write-Host ""
+                    Write-Host "WSL2 actualizado. Ahora:" -ForegroundColor Green
+                    Write-Host "1. Reinicia Docker Desktop" -ForegroundColor White
+                    Write-Host "2. Ejecuta este script nuevamente" -ForegroundColor White
+                    Write-Host ""
+                    pause
+                    exit 1
+                }
+            } catch {
+                # Continuar con instrucciones normales
+            }
+            
+            Write-Host "SOLUCION:" -ForegroundColor Yellow
+            Write-Host ""
+            Write-Host "1. Abre el menu Inicio de Windows" -ForegroundColor White
+            Write-Host "2. Busca 'Docker Desktop'" -ForegroundColor White
+            Write-Host "3. Haz clic derecho sobre 'Docker Desktop'" -ForegroundColor White
+            Write-Host "4. Selecciona 'Ejecutar como administrador'" -ForegroundColor White
+            Write-Host "5. Espera 1-2 minutos hasta que el icono de Docker" -ForegroundColor White
+            Write-Host "   aparezca en la bandeja del sistema (abajo a la derecha)" -ForegroundColor White
+            Write-Host "6. El icono debe estar BLANCO, NO gris" -ForegroundColor White
+            Write-Host "7. Cuando este listo, ejecuta este script nuevamente" -ForegroundColor White
+            Write-Host ""
+            Write-Host "Si Docker Desktop no inicia:" -ForegroundColor Yellow
+            Write-Host "- Ejecuta: wsl --update (en PowerShell como Administrador)" -ForegroundColor White
+            Write-Host "- Reinicia tu computadora" -ForegroundColor White
+            Write-Host "- Verifica que Hyper-V o WSL2 esten habilitados" -ForegroundColor White
+            Write-Host "- Reinstala Docker Desktop si el problema persiste" -ForegroundColor White
+            Write-Host ""
+            pause
+            exit 1
+        }
+    }
 }
 
 Write-Host ""
