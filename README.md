@@ -62,7 +62,7 @@ Características actuales:
    powershell -ExecutionPolicy Bypass -File .\scripts\enable-postgres-docker.ps1
    ```
 
-   - Ajusta `listen_addresses`, `pg_hba.conf` y el firewall para la subred `172.16.0.0/12` (todas las redes NAT que usa Docker en Windows).
+   - Ajusta `listen_addresses`, `pg_hba.conf` (método `scram-sha-256`) y el firewall para la subred `172.16.0.0/12` (todas las redes NAT que usa Docker en Windows).
    - Repite sólo si reinstalas PostgreSQL o cambias el puerto.
 
 3. **Configurar conexión a PostgreSQL para los contenedores**
