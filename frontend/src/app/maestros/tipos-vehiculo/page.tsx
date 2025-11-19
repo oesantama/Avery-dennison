@@ -51,10 +51,10 @@ export default function TiposVehiculoPage() {
     try {
       if (editingId) {
         await tiposVehiculoApi.update(editingId, formData);
-        showToast('Tipo de vehículo actualizado exitosamente', 'success');
+        showToast({ message: 'Tipo de vehículo actualizado exitosamente', type: 'success' });
       } else {
         await tiposVehiculoApi.create(formData);
-        showToast('Tipo de vehículo creado exitosamente', 'success');
+        showToast({ message: 'Tipo de vehículo creado exitosamente', type: 'success' });
       }
       setShowForm(false);
       setEditingId(null);

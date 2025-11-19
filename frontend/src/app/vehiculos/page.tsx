@@ -62,10 +62,10 @@ export default function VehiculosPage() {
     try {
       if (editingId) {
         await vehiculosApi.update(editingId, formData);
-        showToast('Vehículo actualizado exitosamente', 'success');
+        showToast({ message: 'Vehículo actualizado exitosamente', type: 'success' });
       } else {
         await vehiculosApi.create(formData);
-        showToast('Vehículo creado exitosamente', 'success');
+        showToast({ message: 'Vehículo creado exitosamente', type: 'success' });
       }
       setShowForm(false);
       setEditingId(null);

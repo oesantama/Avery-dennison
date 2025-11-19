@@ -83,10 +83,10 @@ export default function PermisosRolPage() {
           puede_editar: formData.puede_editar,
           puede_borrar: formData.puede_borrar,
         });
-        showToast('Permiso actualizado exitosamente', 'success');
+        showToast({ message: 'Permiso actualizado exitosamente', type: 'success' });
       } else {
         await permisosRolApi.create(formData);
-        showToast('Permiso creado exitosamente', 'success');
+        showToast({ message: 'Permiso creado exitosamente', type: 'success' });
       }
       setShowForm(false);
       setEditingId(null);

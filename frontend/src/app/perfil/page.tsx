@@ -46,13 +46,13 @@ export default function PerfilPage() {
         email: formData.email,
         numero_celular: formData.numero_celular,
       });
-      showToast('Perfil actualizado exitosamente', 'success');
+      showToast({ message: 'Perfil actualizado exitosamente', type: 'success' });
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      showToast(
-        error.response?.data?.detail || 'Error al actualizar perfil',
-        'error'
-      );
+      showToast({
+        message: error.response?.data?.detail || 'Error al actualizar perfil',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -64,12 +64,12 @@ export default function PerfilPage() {
 
     // Validaciones
     if (passwordData.new_password !== passwordData.confirm_password) {
-      showToast('Las contraseñas no coinciden', 'error');
+      showToast({ message: 'Las contraseñas no coinciden', type: 'error' });
       return;
     }
 
     if (passwordData.new_password.length < 6) {
-      showToast('La contraseña debe tener al menos 6 caracteres', 'error');
+      showToast({ message: 'La contraseña debe tener al menos 6 caracteres', type: 'error' });
       return;
     }
 
@@ -79,7 +79,7 @@ export default function PerfilPage() {
         current_password: passwordData.current_password,
         new_password: passwordData.new_password,
       });
-      showToast('Contraseña actualizada exitosamente', 'success');
+      showToast({ message: 'Contraseña actualizada exitosamente', type: 'success' });
       setPasswordData({
         current_password: '',
         new_password: '',
@@ -87,10 +87,10 @@ export default function PerfilPage() {
       });
     } catch (error: any) {
       console.error('Error changing password:', error);
-      showToast(
-        error.response?.data?.detail || 'Error al cambiar contraseña',
-        'error'
-      );
+      showToast({
+        message: error.response?.data?.detail || 'Error al cambiar contraseña',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }

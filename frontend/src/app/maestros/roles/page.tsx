@@ -51,10 +51,10 @@ export default function RolesPage() {
     try {
       if (editingId) {
         await rolesApi.update(editingId, formData);
-        showToast('Rol actualizado exitosamente', 'success');
+        showToast({ message: 'Rol actualizado exitosamente', type: 'success' });
       } else {
         await rolesApi.create(formData);
-        showToast('Rol creado exitosamente', 'success');
+        showToast({ message: 'Rol creado exitosamente', type: 'success' });
       }
       setShowForm(false);
       setEditingId(null);
