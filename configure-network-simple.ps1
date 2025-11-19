@@ -8,6 +8,12 @@ Write-Host "  Configuracion de Red - Docker" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
+# Parámetros comunes
+$postgresUser = "postgres"
+$postgresPassword = "Admin123!"
+$postgresDb = "vehiculos_operacion"
+$defaultDockerSubnet = "172.16.0.0/12"
+
 # Detectar IP del host
 Write-Host "[*] Detectando IP del servidor..." -ForegroundColor Cyan
 
@@ -136,7 +142,7 @@ $content = Get-Content $composeFile -Raw
 # Modificar DATABASE_URL en el servicio backend
 Write-Host "[*] Modificando DATABASE_URL..." -ForegroundColor Cyan
 
-$newDatabaseUrl = "postgresql://postgres:yourpassword@$connectionHost`:5432/vehiculos_operacion"
+$newDatabaseUrl = "postgresql://$postgresUser`:$postgresPassword@$connectionHost`:5432/$postgresDb"
 $databaseUrlPattern = 'DATABASE_URL\s*[:=]\s*postgresql://[^@]+@[^:]+:5432/vehiculos_operacion'
 
 if ($content -match $databaseUrlPattern) {
@@ -193,6 +199,22 @@ Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "DATABASE_URL: $newDatabaseUrl" -ForegroundColor Cyan
 Write-Host ""
+$enablePostgresScript = Join-Path $PSScriptRoot "scripts\enable-postgres-docker.ps1"
+if (Test-Path $enablePostgresScript) {
+    Write-Host "Quieres forzar que PostgreSQL escuche a la red de Docker ($defaultDockerSubnet)? (S/N): " -ForegroundColor Yellow -NoNewline
+    $hardenPostgres = Read-Host
+    if ($hardenPostgres -match '^[sS]$') {
+        Write-Host "" 
+        Write-Host "[*] Aplicando reglas de firewall y pg_hba.conf..." -ForegroundColor Cyan
+        try {
+            & $enablePostgresScript -PostgresServiceName "postgresql-x64-15" -DockerSubnet $defaultDockerSubnet
+        } catch {
+            Write-Host "[!] No se pudo ejecutar scripts\\enable-postgres-docker.ps1" -ForegroundColor Red
+            Write-Host $_ -ForegroundColor DarkRed
+        }
+    }
+}
+
 Write-Host "Siguiente paso:" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "   1. Ejecutar desde este script (opcion S)" -ForegroundColor Cyan
