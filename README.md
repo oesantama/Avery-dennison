@@ -2,6 +2,8 @@
 
 > Plataforma completa para planear operaciones diarias, asignar vehículos y registrar entregas con evidencia fotográfica.
 
+> 📘 ¿Necesitas un checklist corto de qué hacer en tu laptop vs en el servidor? Revisa `docs/local-vs-server-playbook.md`.
+
 ## 🧱 Stack tecnológico
 
 - **Frontend**: Next.js 14 (React 18, TypeScript, Tailwind CSS, Axios)
@@ -48,6 +50,8 @@ Características actuales:
 - DNS apunta a `C:\M7Aplicaciones\Avery`, donde IIS sirve `index.html` y `web.config` para redirigir a `http://avery.millasiete.com:8036`.
 
 ### Flujo para publicar una actualización
+
+> ⚡ Para hacerlo en un solo comando usa `powershell -ExecutionPolicy Bypass -File .\scripts\refresh-hybrid-stack.ps1 -HostIp <IP-estable>` y luego salta a la verificación. El script ejecuta down/build/up, recrea los `portproxy` y corre health checks. El paso a paso completo está en `docs/guia-despliegue-hibrido.md`.
 
 1. **Actualizar código**
 
