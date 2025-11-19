@@ -68,7 +68,10 @@ export default function VehiculoEntregasPage() {
       setEntregas(entregasData);
     } catch (error) {
       console.error('Error loading data:', error);
-      showToast('Error al cargar los datos', 'error');
+      showToast({
+        message: 'Error al cargar los datos',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
