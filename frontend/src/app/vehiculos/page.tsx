@@ -62,10 +62,10 @@ export default function VehiculosPage() {
     try {
       if (editingId) {
         await vehiculosApi.update(editingId, formData);
-        showToast({ message: 'Vehículo actualizado exitosamente', type: 'success' });
+        showToast('Vehículo actualizado exitosamente', 'success');
       } else {
         await vehiculosApi.create(formData);
-        showToast({ message: 'Vehículo creado exitosamente', type: 'success' });
+        showToast('Vehículo creado exitosamente', 'success');
       }
       setShowForm(false);
       setEditingId(null);
@@ -74,7 +74,7 @@ export default function VehiculosPage() {
     } catch (error: any) {
       console.error('Error saving vehiculo:', error);
       const message = error?.response?.data?.detail || 'Error al guardar el vehículo';
-      showToast({ message, type: 'error' });
+      showToast(message, 'error');
     }
   };
 

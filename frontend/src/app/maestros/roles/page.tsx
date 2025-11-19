@@ -51,10 +51,10 @@ export default function RolesPage() {
     try {
       if (editingId) {
         await rolesApi.update(editingId, formData);
-        showToast({ message: 'Rol actualizado exitosamente', type: 'success' });
+        showToast('Rol actualizado exitosamente', 'success');
       } else {
         await rolesApi.create(formData);
-        showToast({ message: 'Rol creado exitosamente', type: 'success' });
+        showToast('Rol creado exitosamente', 'success');
       }
       setShowForm(false);
       setEditingId(null);
@@ -63,7 +63,7 @@ export default function RolesPage() {
     } catch (error: any) {
       console.error('Error saving rol:', error);
       const message = error?.response?.data?.detail || 'Error al guardar el rol';
-      showToast({ message, type: 'error' });
+      showToast(message, 'error');
     }
   };
 

@@ -51,10 +51,10 @@ export default function TiposVehiculoPage() {
     try {
       if (editingId) {
         await tiposVehiculoApi.update(editingId, formData);
-        showToast({ message: 'Tipo de vehículo actualizado exitosamente', type: 'success' });
+        showToast('Tipo de vehículo actualizado exitosamente', 'success');
       } else {
         await tiposVehiculoApi.create(formData);
-        showToast({ message: 'Tipo de vehículo creado exitosamente', type: 'success' });
+        showToast('Tipo de vehículo creado exitosamente', 'success');
       }
       setShowForm(false);
       setEditingId(null);
@@ -63,7 +63,7 @@ export default function TiposVehiculoPage() {
     } catch (error: any) {
       console.error('Error saving tipo:', error);
       const message = error?.response?.data?.detail || 'Error al guardar el tipo de vehículo';
-      showToast({ message, type: 'error' });
+      showToast(message, 'error');
     }
   };
 

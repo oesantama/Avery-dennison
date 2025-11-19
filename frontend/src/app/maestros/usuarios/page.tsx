@@ -104,7 +104,7 @@ export default function UsuariosPage() {
           setRoles(directRoles);
         } catch (error) {
           console.error('❌ Error loading roles:', error);
-          showToast({ message: 'Error al cargar los roles', type: 'error' });
+          showToast('Error al cargar los roles', 'error');
         }
       }
     };
@@ -119,7 +119,7 @@ export default function UsuariosPage() {
       setUsuarios(usuariosData);
     } catch (error) {
       console.error('Error loading data:', error);
-      showToast({ message: 'Error al cargar los datos', type: 'error' });
+      showToast('Error al cargar los datos', 'error');
     } finally {
       setLoading(false);
     }
@@ -130,22 +130,22 @@ export default function UsuariosPage() {
 
     // Validación de campos requeridos
     if (!formData.username || !formData.email || !formData.rol_id) {
-      showToast({ message: 'Por favor complete todos los campos requeridos', type: 'error' });
+      showToast('Por favor complete todos los campos requeridos', 'error');
       return;
     }
 
     // Validación de contraseñas solo para usuarios nuevos
     if (!editingId) {
       if (!formData.password) {
-        showToast({ message: 'La contraseña es requerida para usuarios nuevos', type: 'error' });
+        showToast('La contraseña es requerida para usuarios nuevos', 'error');
         return;
       }
       if (formData.password !== formData.password_confirm) {
-        showToast({ message: 'Las contraseñas no coinciden', type: 'error' });
+        showToast('Las contraseñas no coinciden', 'error');
         return;
       }
       if (formData.password.length < 6) {
-        showToast({ message: 'La contraseña debe tener al menos 6 caracteres', type: 'error' });
+        showToast('La contraseña debe tener al menos 6 caracteres', 'error');
         return;
       }
     }
@@ -153,11 +153,11 @@ export default function UsuariosPage() {
     // Validar contraseñas en edición si se proporciona nueva contraseña
     if (editingId && formData.password) {
       if (formData.password !== formData.password_confirm) {
-        showToast({ message: 'Las contraseñas no coinciden', type: 'error' });
+        showToast('Las contraseñas no coinciden', 'error');
         return;
       }
       if (formData.password.length < 6) {
-        showToast({ message: 'La contraseña debe tener al menos 6 caracteres', type: 'error' });
+        showToast('La contraseña debe tener al menos 6 caracteres', 'error');
         return;
       }
     }
@@ -183,7 +183,7 @@ export default function UsuariosPage() {
           await permisosUsuarioApi.createBulk(editingId, permisosUsuario);
         }
 
-        showToast({ message: '✅ Usuario actualizado exitosamente', type: 'success' });
+        showToast('✅ Usuario actualizado exitosamente', 'success');
       } else {
         // Crear nuevo usuario
         const usuarioCreado = await usuariosApi.create(dataToSubmit);
@@ -200,7 +200,7 @@ export default function UsuariosPage() {
           );
         }
 
-        showToast({ message: '✅ Usuario creado exitosamente', type: 'success' });
+        showToast('✅ Usuario creado exitosamente', 'success');
       }
 
       setShowForm(false);
@@ -211,7 +211,7 @@ export default function UsuariosPage() {
       console.error('Error saving usuario:', error);
       const message =
         error?.response?.data?.detail || 'Error al guardar el usuario';
-      showToast({ message: `❌ ${message}`, type: 'error' });
+      showToast(`❌ ${message}`, 'error');
     } finally {
       setSaving(false);
     }
@@ -260,13 +260,13 @@ export default function UsuariosPage() {
       onConfirm: async () => {
         try {
           await usuariosApi.delete(id);
-          showToast({ message: 'Usuario desactivado exitosamente', type: 'success' });
+          showToast('Usuario desactivado exitosamente', 'success');
           loadData();
         } catch (error: any) {
           console.error('Error deleting usuario:', error);
           const message =
             error?.response?.data?.detail || 'Error al desactivar el usuario';
-          showToast({ message, type: 'error' });
+          showToast(message, 'error');
         }
       },
     });
@@ -275,7 +275,7 @@ export default function UsuariosPage() {
   const handleDesbloquear = async (id: number) => {
     // ✅ Validar permisos
     if (!canEditUsuarios) {
-      showToast({ message: 'No tienes permiso para desbloquear usuarios', type: 'error' });
+      showToast('No tienes permiso para desbloquear usuarios', 'error');
       return;
     }
 
@@ -287,13 +287,13 @@ export default function UsuariosPage() {
       onConfirm: async () => {
         try {
           await usuariosApi.desbloquear(id);
-          showToast({ message: 'Usuario desbloqueado exitosamente', type: 'success' });
+          showToast('Usuario desbloqueado exitosamente', 'success');
           loadData();
         } catch (error: any) {
           console.error('Error desbloqueando usuario:', error);
           const message =
             error?.response?.data?.detail || 'Error al desbloquear el usuario';
-          showToast({ message, type: 'error' });
+          showToast(message, 'error');
         }
       },
     });
