@@ -93,13 +93,17 @@ function Update-ComposeFile {
 function Run-Compose {
     param(
         [string]$ComposeFilePath,
-        [string[]]$Args
+        [string[]]$ComposeArgs
     )
 
     $cmd = "docker-compose"
-    $fullArgs = @("-f", $ComposeFilePath) + $Args
-    Write-Info "$cmd $($fullArgs -join ' ')"
-    & $cmd @fullArgs
+    $arguments = @("-f", $ComposeFilePath)
+    if ($ComposeArgs) {
+        $arguments += $ComposeArgs
+    }
+
+    Write-Info "$cmd $($arguments -join ' ')"
+    & $cmd @arguments
 }
 
 function Refresh-PortProxy {
@@ -133,8 +137,8 @@ Run-Compose -ComposeFilePath $ComposeFile -Args @("build", "--no-cache")
 Run-Compose -ComposeFilePath $ComposeFile -Args @("up", "-d")
 
 Write-Section "3) Obtener IPs internas"
-$backendIp = docker inspect -f "{{ .NetworkSettings.Networks.vehiculos-network.IPAddress }}" $BackendContainer
-$frontendIp = docker inspect -f "{{ .NetworkSettings.Networks.vehiculos-network.IPAddress }}" $FrontendContainer
+$backendIp = docker inspect -f '{{ .NetworkSettings.Networks."vehiculos-network".IPAddress }}' $BackendContainer
+$frontendIp = docker inspect -f '{{ .NetworkSettings.Networks."vehiculos-network".IPAddress }}' $FrontendContainer
 Write-Ok "Backend: $backendIp"
 Write-Ok "Frontend: $frontendIp"
 
