@@ -234,6 +234,7 @@ export default function UsuariosPage() {
     try {
       const permisosData = await permisosUsuarioApi.getByUsuario(usuario.id);
       const permisosCreate = permisosData.map((p) => ({
+        usuario_id: usuario.id,
         page_id: p.page_id,
         puede_ver: p.puede_ver,
         puede_crear: p.puede_crear,
