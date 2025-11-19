@@ -8,6 +8,13 @@ Write-Host "  Configuracion de Red - Docker" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
+# Parámetros comunes
+$postgresUser = "postgres"
+$postgresPassword = "Admin123!"
+$postgresDb = "vehiculos_operacion"
+$defaultDockerSubnet = "172.16.0.0/12"
+$defaultPostgresDataPath = "C:\Program Files\PostgreSQL\15\data"
+
 # Detectar IP del host
 Write-Host "[*] Detectando IP del servidor..." -ForegroundColor Cyan
 
@@ -136,16 +143,17 @@ $content = Get-Content $composeFile -Raw
 # Modificar DATABASE_URL en el servicio backend
 Write-Host "[*] Modificando DATABASE_URL..." -ForegroundColor Cyan
 
-$newDatabaseUrl = "postgresql://postgres:yourpassword@$connectionHost`:5432/vehiculos_operacion"
-$databaseUrlPattern = 'DATABASE_URL\s*[:=]\s*postgresql://[^@]+@[^:]+:5432/vehiculos_operacion'
+$newDatabaseUrl = "postgresql://$postgresUser`:$postgresPassword@$connectionHost`:5432/$postgresDb"
+$newDatabaseUrlQuoted = '"' + $newDatabaseUrl + '"'
+$databaseUrlPattern = 'DATABASE_URL\s*[:=]\s*"?postgresql://[^@]+@[^:]+:5432/vehiculos_operacion"?'
 
 if ($content -match $databaseUrlPattern) {
     # Reemplazar DATABASE_URL compatible con formato YAML (:) o env (=)
-    $content = $content -replace $databaseUrlPattern, "DATABASE_URL: $newDatabaseUrl"
+    $content = $content -replace $databaseUrlPattern, "DATABASE_URL: $newDatabaseUrlQuoted"
     Write-Host "[OK] DATABASE_URL actualizado: $newDatabaseUrl" -ForegroundColor Green
 } else {
     Write-Host "[!] No se pudo localizar DATABASE_URL, verificando insercion manual..." -ForegroundColor Yellow
-    $content = $content -replace '(environment:\s*(?:\r?\n\s{6,}[^\r\n]+)+)', "$1`n      DATABASE_URL: $newDatabaseUrl"
+    $content = $content -replace '(environment:\s*(?:\r?\n\s{6,}[^\r\n]+)+)', "$1`n      DATABASE_URL: $newDatabaseUrlQuoted"
     Write-Host "[OK] DATABASE_URL agregado manualmente: $newDatabaseUrl" -ForegroundColor Green
 }
 
@@ -193,6 +201,22 @@ Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "DATABASE_URL: $newDatabaseUrl" -ForegroundColor Cyan
 Write-Host ""
+$enablePostgresScript = Join-Path $PSScriptRoot "scripts\enable-postgres-docker.ps1"
+if (Test-Path $enablePostgresScript) {
+    Write-Host "Quieres forzar que PostgreSQL escuche a la red de Docker ($defaultDockerSubnet)? (S/N): " -ForegroundColor Yellow -NoNewline
+    $hardenPostgres = Read-Host
+    if ($hardenPostgres -match '^[sS]$') {
+        Write-Host "" 
+        Write-Host "[*] Aplicando reglas de firewall y pg_hba.conf..." -ForegroundColor Cyan
+        try {
+            & $enablePostgresScript -PostgresServiceName "postgresql-x64-15" -DockerSubnet $defaultDockerSubnet -PostgresDataPath $defaultPostgresDataPath
+        } catch {
+            Write-Host "[!] No se pudo ejecutar scripts\\enable-postgres-docker.ps1" -ForegroundColor Red
+            Write-Host $_ -ForegroundColor DarkRed
+        }
+    }
+}
+
 Write-Host "Siguiente paso:" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "   1. Ejecutar desde este script (opcion S)" -ForegroundColor Cyan

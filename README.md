@@ -19,6 +19,7 @@
 ├── docker-compose.hybrid.yml   # Producción (PostgreSQL host + contenedores Windows)
 ├── docker-compose*.yml         # Escenarios locales (dev / default)
 ├── configure-network-simple.ps1# Ajusta DATABASE_URL con la IP del servidor
+├── scripts/                    # Automatizaciones (PostgreSQL + helpers)
 ├── setup-iis.ps1               # IIS + archivos de redirección en C:\M7Aplicaciones\Avery
 ├── start-avery.bat             # Helper para pull/build/up/logs en producción
 ├── index.html / web.config     # Redirección HTML usada por IIS
@@ -55,7 +56,16 @@ Características actuales:
    git pull origin main
    ```
 
-2. **Configurar conexión a PostgreSQL**
+2. **(Una sola vez) Permitir conexiones desde Docker**
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\scripts\enable-postgres-docker.ps1
+   ```
+
+   - Ajusta `listen_addresses`, `pg_hba.conf` y el firewall para la subred `172.16.0.0/12` (todas las redes NAT que usa Docker en Windows).
+   - Repite sólo si reinstalas PostgreSQL o cambias el puerto.
+
+3. **Configurar conexión a PostgreSQL para los contenedores**
 
    ```powershell
    powershell -ExecutionPolicy Bypass -File .\configure-network-simple.ps1
@@ -69,7 +79,7 @@ Características actuales:
      docker-compose -f docker-compose.hybrid.yml up -d
      ```
 
-3. **Verificar servicios**
+4. **Verificar servicios**
 
    ```powershell
    docker-compose -f docker-compose.hybrid.yml ps
@@ -80,12 +90,12 @@ Características actuales:
    - Frontend: `http://avery.millasiete.com:8036`
    - Backend docs: `http://avery.millasiete.com:3035/docs`
 
-4. **Redirección vía IIS**
+5. **Redirección vía IIS**
 
    - Manual: copiar `index.html` y `web.config` a `C:\M7Aplicaciones\Avery`.
    - Automática: `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` y `.\setup-iis.ps1` (instala IIS, crea el sitio y copia los archivos).
 
-5. **Helper opcional**
+6. **Helper opcional**
    - `start-avery.bat` (en `C:\M7Aplicaciones\Avery`) realiza pull → down → build → up → logs.
 
 ## 🔄 Operaciones habituales
