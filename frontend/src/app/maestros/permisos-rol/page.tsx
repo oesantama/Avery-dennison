@@ -5,6 +5,7 @@ import Card from '@/components/ui/Card';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
+import SimpleLoader from '@/components/ui/SimpleLoader';
 import Toast from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/useToast';
@@ -13,7 +14,6 @@ import type { Page, PermisoRol, PermisoRolCreate, Rol } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FiPlus, FiShield } from 'react-icons/fi';
-import SimpleLoader from '@/components/ui/SimpleLoader';
 
 export default function PermisosRolPage() {
   const router = useRouter();

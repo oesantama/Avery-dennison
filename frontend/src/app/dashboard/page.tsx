@@ -1,13 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
+import { useAuth } from '@/contexts/AuthContext';
 import { dashboardApi, entregasApi } from '@/lib/api';
 import type { DashboardKPIs, Entrega } from '@/types';
-import { FiTruck, FiPackage, FiCheckCircle, FiClock, FiSearch, FiDownload } from 'react-icons/fi';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import {
+  FiCheckCircle,
+  FiClock,
+  FiDownload,
+  FiPackage,
+  FiSearch,
+  FiTruck,
+} from 'react-icons/fi';
 import * as XLSX from 'xlsx';
 
 export default function DashboardPage() {
@@ -31,12 +38,12 @@ export default function DashboardPage() {
     try {
       // ✅ Obtener fecha de hoy en formato YYYY-MM-DD
       const hoy = new Date().toISOString().split('T')[0];
-      
+
       const [kpisData, entregasData] = await Promise.all([
         dashboardApi.getKPIs(),
         // ✅ Filtrar entregas solo de hoy
-        entregasApi.list({ 
-          limit: 10
+        entregasApi.list({
+          limit: 10,
         }),
       ]);
       setKpis(kpisData);
@@ -76,13 +83,15 @@ export default function DashboardPage() {
 
     const dataToExport = filteredEntregas.map((entrega) => ({
       'N° Factura': entrega.numero_factura || '-',
-      'Cliente': entrega.cliente || '-',
-      'Fecha Operación': new Date(entrega.fecha_operacion).toLocaleDateString('es-CO'),
-      'Fecha Cumplido': entrega.fecha_cumplido 
+      Cliente: entrega.cliente || '-',
+      'Fecha Operación': new Date(entrega.fecha_operacion).toLocaleDateString(
+        'es-CO'
+      ),
+      'Fecha Cumplido': entrega.fecha_cumplido
         ? new Date(entrega.fecha_cumplido).toLocaleString('es-CO')
         : 'Pendiente',
-      'Estado': entrega.estado,
-      'Observaciones': entrega.observacion || '-',
+      Estado: entrega.estado,
+      Observaciones: entrega.observacion || '-',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
@@ -95,7 +104,9 @@ export default function DashboardPage() {
       wch: Math.min(
         Math.max(
           key.length,
-          ...dataToExport.map((row) => String(row[key as keyof typeof row]).length)
+          ...dataToExport.map(
+            (row) => String(row[key as keyof typeof row]).length
+          )
         ),
         maxWidth
       ),
@@ -122,10 +133,22 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="mt-2 text-sm text-gray-700">
-            Vista del día: {new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            Vista del día:{' '}
+            {new Date().toLocaleDateString('es-CO', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            Para consultas históricas y filtros, usar <button onClick={() => router.push('/consultas/entregas')} className="text-primary-600 hover:text-primary-700 underline">Consultas de Entregas</button>
+            Para consultas históricas y filtros, usar{' '}
+            <button
+              onClick={() => router.push('/consultas/entregas')}
+              className="text-primary-600 hover:text-primary-700 underline"
+            >
+              Consultas de Entregas
+            </button>
           </p>
         </div>
 
@@ -207,7 +230,13 @@ export default function DashboardPage() {
         )}
 
         {/* Recent Deliveries */}
-        <Card title={`Entregas de Hoy${recentEntregas.length > 0 ? ` (${filteredEntregas.length} de ${recentEntregas.length})` : ''}`}>
+        <Card
+          title={`Entregas de Hoy${
+            recentEntregas.length > 0
+              ? ` (${filteredEntregas.length} de ${recentEntregas.length})`
+              : ''
+          }`}
+        >
           {/* Barra de búsqueda y exportar */}
           {recentEntregas.length > 0 && (
             <div className="mb-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
@@ -239,7 +268,9 @@ export default function DashboardPage() {
           {recentEntregas.length === 0 ? (
             <div className="text-center py-12">
               <FiPackage className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-4 text-sm font-medium text-gray-900">No hay entregas registradas hoy</h3>
+              <h3 className="mt-4 text-sm font-medium text-gray-900">
+                No hay entregas registradas hoy
+              </h3>
               <p className="mt-2 text-sm text-gray-500">
                 Comienza creando una operación diaria y agregando entregas
               </p>
@@ -256,7 +287,9 @@ export default function DashboardPage() {
           ) : filteredEntregas.length === 0 ? (
             <div className="text-center py-12">
               <FiSearch className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-4 text-sm font-medium text-gray-900">No se encontraron resultados</h3>
+              <h3 className="mt-4 text-sm font-medium text-gray-900">
+                No se encontraron resultados
+              </h3>
               <p className="mt-2 text-sm text-gray-500">
                 Intenta con otro término de búsqueda
               </p>
@@ -282,7 +315,10 @@ export default function DashboardPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {filteredEntregas.map((entrega) => (
-                    <tr key={entrega.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={entrega.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
                       <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
                         {entrega.numero_factura}
                       </td>

@@ -3,14 +3,17 @@
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import Modal from '@/components/ui/Modal';
+import SimpleLoader from '@/components/ui/SimpleLoader';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { entregasApi, operacionesApi } from '@/lib/api';
 import type { Entrega, OperacionDiaria, VehiculoOperacion } from '@/types';
-import { formatDateTimeColombian, formatDateColombian } from '@/utils/dateFormat';
+import {
+  formatDateColombian,
+  formatDateTimeColombian,
+} from '@/utils/dateFormat';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import SimpleLoader from '@/components/ui/SimpleLoader';
 import {
   FiArrowLeft,
   FiCamera,
@@ -68,7 +71,10 @@ export default function VehiculoEntregasPage() {
       setEntregas(entregasData);
     } catch (error) {
       console.error('Error loading data:', error);
-      showToast('Error al cargar los datos', 'error');
+      showToast({
+        message: 'Error al cargar los datos',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -82,14 +88,14 @@ export default function VehiculoEntregasPage() {
         fecha_operacion: operacion!.fecha_operacion,
         ...formData,
       });
-      
+
       // Notificación de éxito con detalles
       showToast({
         message: `✅ Entrega #${formData.numero_factura} asignada a vehículo ${vehiculo?.placa}`,
         type: 'success',
-        duration: 5000
+        duration: 5000,
       });
-      
+
       setShowAddModal(false);
       setFormData({
         numero_factura: '',
@@ -100,9 +106,10 @@ export default function VehiculoEntregasPage() {
     } catch (error) {
       console.error('Error adding entrega:', error);
       showToast({
-        message: '❌ Error al agregar entrega. Verifique que el número de factura no esté duplicado.',
+        message:
+          '❌ Error al agregar entrega. Verifique que el número de factura no esté duplicado.',
         type: 'error',
-        duration: 5000
+        duration: 5000,
       });
     }
   };
@@ -134,13 +141,14 @@ export default function VehiculoEntregasPage() {
       }
 
       const icon = actionData.estado === 'cumplido' ? '✅' : '❌';
-      const estadoTexto = actionData.estado === 'cumplido' ? 'cumplida' : 'no cumplida';
+      const estadoTexto =
+        actionData.estado === 'cumplido' ? 'cumplida' : 'no cumplida';
       const type = actionData.estado === 'cumplido' ? 'success' : 'error';
-      
+
       showToast({
         message: `${icon} Entrega #${selectedEntrega.numero_factura} marcada como ${estadoTexto}`,
         type,
-        duration: 5000
+        duration: 5000,
       });
       setShowActionModal(false);
       setSelectedEntrega(null);
@@ -148,9 +156,10 @@ export default function VehiculoEntregasPage() {
     } catch (error) {
       console.error('Error updating entrega:', error);
       showToast({
-        message: '❌ Error al actualizar la entrega. Por favor intente nuevamente.',
+        message:
+          '❌ Error al actualizar la entrega. Por favor intente nuevamente.',
         type: 'error',
-        duration: 5000
+        duration: 5000,
       });
     }
   };
@@ -201,8 +210,7 @@ export default function VehiculoEntregasPage() {
               Entregas - Vehículo {vehiculo.placa}
             </h1>
             <p className="mt-2 text-sm text-gray-700">
-              Operación del{' '}
-              {formatDateColombian(operacion.fecha_operacion)}
+              Operación del {formatDateColombian(operacion.fecha_operacion)}
             </p>
           </div>
           <button
@@ -309,12 +317,14 @@ export default function VehiculoEntregasPage() {
                         )}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {entrega.fecha_cumplido && entrega.estado !== 'pendiente'
+                        {entrega.fecha_cumplido &&
+                        entrega.estado !== 'pendiente'
                           ? formatDateTimeColombian(entrega.fecha_cumplido)
                           : '-'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {entrega.usuario_cumplido_nombre && entrega.estado !== 'pendiente'
+                        {entrega.usuario_cumplido_nombre &&
+                        entrega.estado !== 'pendiente'
                           ? entrega.usuario_cumplido_nombre
                           : '-'}
                       </td>
