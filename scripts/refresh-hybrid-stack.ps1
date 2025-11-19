@@ -64,14 +64,15 @@ function Update-ComposeFile {
     $content = Get-Content $Path -Raw
 
     $databaseUrl = "postgresql://$DbUser`:$DbPass@$HostIpValue`:5432/$DbName"
-    $dbPattern = 'DATABASE_URL:\s*"postgresql://[^"]+"'
+    $dbPattern = 'DATABASE_URL:\s*"postgresql://[^\"]+"'
     if ($content -match $dbPattern) {
-        $content = $content -replace $dbPattern, "DATABASE_URL: \"$databaseUrl\""
+        $replacement = ("DATABASE_URL: ""{0}""" -f $databaseUrl)
+        $content = $content -replace $dbPattern, $replacement
     } else {
         throw "No se encontró la clave DATABASE_URL en $Path"
     }
 
-    $extraHostBlock = "    extra_hosts:`r`n      - \"host.docker.internal:$HostIpValue\""
+    $extraHostBlock = ("    extra_hosts:`r`n      - ""host.docker.internal:{0}""" -f $HostIpValue)
     $extraPattern = '    extra_hosts:(?:\s*\r?\n\s+- \"host\.docker\.internal:[^\"]+\")+'
     if ($content -match $extraPattern) {
         $content = $content -replace $extraPattern, $extraHostBlock
