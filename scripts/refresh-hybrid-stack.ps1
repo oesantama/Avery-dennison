@@ -93,7 +93,7 @@ function Update-ComposeFile {
 function Run-Compose {
     param(
         [string]$ComposeFilePath,
-        [string[]]$ComposeArgs
+        [Alias("Args")][string[]]$ComposeArgs
     )
 
     $cmd = "docker-compose"
@@ -104,6 +104,25 @@ function Run-Compose {
 
     Write-Info "$cmd $($arguments -join ' ')"
     & $cmd @arguments
+}
+
+function Get-ContainerIp {
+    param(
+        [string]$ContainerName,
+        [string]$NetworkName
+    )
+
+    $raw = docker inspect $ContainerName | ConvertFrom-Json
+    if (-not $raw -or -not $raw[0]) {
+        throw "No se pudo inspeccionar el contenedor $ContainerName"
+    }
+
+    $network = $raw[0].NetworkSettings.Networks.$NetworkName
+    if (-not $network) {
+        throw "El contenedor $ContainerName no está conectado a la red $NetworkName"
+    }
+
+    return $network.IPAddress
 }
 
 function Refresh-PortProxy {
@@ -137,8 +156,8 @@ Run-Compose -ComposeFilePath $ComposeFile -Args @("build", "--no-cache")
 Run-Compose -ComposeFilePath $ComposeFile -Args @("up", "-d")
 
 Write-Section "3) Obtener IPs internas"
-$backendIp = docker inspect -f '{{ .NetworkSettings.Networks."vehiculos-network".IPAddress }}' $BackendContainer
-$frontendIp = docker inspect -f '{{ .NetworkSettings.Networks."vehiculos-network".IPAddress }}' $FrontendContainer
+$backendIp = Get-ContainerIp -ContainerName $BackendContainer -NetworkName "vehiculos-network"
+$frontendIp = Get-ContainerIp -ContainerName $FrontendContainer -NetworkName "vehiculos-network"
 Write-Ok "Backend: $backendIp"
 Write-Ok "Frontend: $frontendIp"
 
