@@ -45,5 +45,5 @@ ENV NODE_ENV=production
 ENV PORT=8035
 ENV HOSTNAME="0.0.0.0"
 
-# Comando para ejecutar la aplicación (usar ruta completa de node)
-CMD ["C:\\Program Files\\nodejs\\node.exe", "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js", "start"]
+# Comando para ejecutar la aplicación directamente desde el build standalone
+CMD ["C:\\Program Files\\nodejs\\node.exe", ".next\\standalone\\server.js"]
