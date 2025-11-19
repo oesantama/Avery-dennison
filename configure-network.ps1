@@ -196,4 +196,4 @@ if ($startDocker -eq 'S' -or $startDocker -eq 's') {
 
 Write-Host ""
 Write-Host "✅ Configuración finalizada. Presiona cualquier tecla para salir..." -ForegroundColor Green
-pause | Out-Null
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
