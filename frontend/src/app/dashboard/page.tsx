@@ -61,8 +61,7 @@ export default function DashboardPage() {
       return (
         entrega.numero_factura?.toLowerCase().includes(term) ||
         entrega.cliente?.toLowerCase().includes(term) ||
-        entrega.estado?.toLowerCase().includes(term) ||
-        entrega.direccion?.toLowerCase().includes(term)
+        entrega.estado?.toLowerCase().includes(term)
       );
     });
     setFilteredEntregas(filtered);
@@ -83,7 +82,7 @@ export default function DashboardPage() {
         ? new Date(entrega.fecha_cumplido).toLocaleString('es-CO')
         : 'Pendiente',
       'Estado': entrega.estado,
-      'Observaciones': entrega.observaciones || '-',
+      'Observaciones': entrega.observacion || '-',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
