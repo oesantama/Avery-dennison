@@ -49,15 +49,18 @@ Características actuales:
 ### Flujo para publicar una actualización
 
 1. **Actualizar código**
+
    ```powershell
    cd C:\M7Aplicaciones\Avery\Avery-dennison
    git pull origin main
    ```
 
 2. **Configurar conexión a PostgreSQL**
+
    ```powershell
    powershell -ExecutionPolicy Bypass -File .\configure-network-simple.ps1
    ```
+
    - Usa la **opción 2** (IP detectada) y responde **S** para que el script ejecute `down`, `build` y `up -d`.
    - Manual (si prefieres):
      ```powershell
@@ -67,15 +70,18 @@ Características actuales:
      ```
 
 3. **Verificar servicios**
+
    ```powershell
    docker-compose -f docker-compose.hybrid.yml ps
    docker-compose -f docker-compose.hybrid.yml logs backend
    docker-compose -f docker-compose.hybrid.yml logs frontend
    ```
+
    - Frontend: `http://avery.millasiete.com:8036`
    - Backend docs: `http://avery.millasiete.com:3035/docs`
 
 4. **Redirección vía IIS**
+
    - Manual: copiar `index.html` y `web.config` a `C:\M7Aplicaciones\Avery`.
    - Automática: `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` y `.\setup-iis.ps1` (instala IIS, crea el sitio y copia los archivos).
 
@@ -84,12 +90,12 @@ Características actuales:
 
 ## 🔄 Operaciones habituales
 
-| Acción | Comando |
-| --- | --- |
-| Ver estado rápido | `docker-compose -f docker-compose.hybrid.yml ps` |
-| Logs en vivo | `docker-compose -f docker-compose.hybrid.yml logs -f` |
+| Acción             | Comando                                                        |
+| ------------------ | -------------------------------------------------------------- |
+| Ver estado rápido  | `docker-compose -f docker-compose.hybrid.yml ps`               |
+| Logs en vivo       | `docker-compose -f docker-compose.hybrid.yml logs -f`          |
 | Reiniciar frontend | `docker-compose -f docker-compose.hybrid.yml restart frontend` |
-| Reiniciar backend | `docker-compose -f docker-compose.hybrid.yml restart backend` |
+| Reiniciar backend  | `docker-compose -f docker-compose.hybrid.yml restart backend`  |
 
 ## 🔐 Credenciales iniciales
 
