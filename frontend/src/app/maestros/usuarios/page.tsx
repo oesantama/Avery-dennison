@@ -211,7 +211,7 @@ export default function UsuariosPage() {
       console.error('Error saving usuario:', error);
       const message =
         error?.response?.data?.detail || 'Error al guardar el usuario';
-      showToast({ message: `"`❌ ${message}`", type: "`error" });
+      showToast({ message: `❌ ${message}`, type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -266,7 +266,7 @@ export default function UsuariosPage() {
           console.error('Error deleting usuario:', error);
           const message =
             error?.response?.data?.detail || 'Error al desactivar el usuario';
-          showToast(message, 'error');
+          showToast({ message, type: 'error' });
         }
       },
     });
@@ -293,7 +293,7 @@ export default function UsuariosPage() {
           console.error('Error desbloqueando usuario:', error);
           const message =
             error?.response?.data?.detail || 'Error al desbloquear el usuario';
-          showToast(message, 'error');
+          showToast({ message, type: 'error' });
         }
       },
     });

@@ -96,7 +96,7 @@ export default function PermisosRolPage() {
       console.error('Error saving permiso:', error);
       const message =
         error?.response?.data?.detail || 'Error al guardar el permiso';
-      showToast(message, 'error');
+      showToast({ message, type: 'error' });
     }
   };
 

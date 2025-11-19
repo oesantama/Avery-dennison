@@ -74,7 +74,7 @@ export default function VehiculosPage() {
     } catch (error: any) {
       console.error('Error saving vehiculo:', error);
       const message = error?.response?.data?.detail || 'Error al guardar el vehículo';
-      showToast(message, 'error');
+      showToast({ message, type: 'error' });
     }
   };
 

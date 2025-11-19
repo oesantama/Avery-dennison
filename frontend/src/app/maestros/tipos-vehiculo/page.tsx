@@ -63,7 +63,7 @@ export default function TiposVehiculoPage() {
     } catch (error: any) {
       console.error('Error saving tipo:', error);
       const message = error?.response?.data?.detail || 'Error al guardar el tipo de vehículo';
-      showToast(message, 'error');
+      showToast({ message, type: 'error' });
     }
   };
 

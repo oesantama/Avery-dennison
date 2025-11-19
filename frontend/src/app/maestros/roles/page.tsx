@@ -63,7 +63,7 @@ export default function RolesPage() {
     } catch (error: any) {
       console.error('Error saving rol:', error);
       const message = error?.response?.data?.detail || 'Error al guardar el rol';
-      showToast(message, 'error');
+      showToast({ message, type: 'error' });
     }
   };
 
