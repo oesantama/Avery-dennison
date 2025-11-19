@@ -92,7 +92,8 @@ function Ensure-HbaEntry {
 
 	$entry = "host    all             all             $Subnet            md5"
 
-	$existing = Select-String -Path $HbaPath -Pattern [regex]::Escape($Subnet) -Quiet
+	$pattern = [regex]::Escape($Subnet)
+	$existing = Select-String -Path $HbaPath -Pattern $pattern -Quiet -ErrorAction SilentlyContinue
 	if ($existing) {
 		Write-Info "pg_hba.conf ya contiene la subred $Subnet."
 		return
