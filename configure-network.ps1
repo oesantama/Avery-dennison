@@ -104,7 +104,7 @@ switch ($option) {
         Write-Host "ℹ️  No se modificará el archivo" -ForegroundColor Gray
         Write-Host ""
         Write-Host "Presiona cualquier tecla para continuar..." -ForegroundColor Yellow
-        pause | Out-Null
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
         exit 0
     }
     default {
