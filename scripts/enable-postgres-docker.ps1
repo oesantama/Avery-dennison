@@ -87,21 +87,31 @@ function Ensure-ListenAddresses {
 function Ensure-HbaEntry {
 	param(
 		[string]$HbaPath,
-		[string]$Subnet
+		[string]$Subnet,
+		[string]$AuthMethod = "scram-sha-256"
 	)
 
-	$entry = "host    all             all             $Subnet            md5"
+	$entry = "host    all             all             $Subnet            $AuthMethod"
+	$content = Get-Content -Path $HbaPath -Raw
+	$escapedSubnet = [regex]::Escape($Subnet)
+	$existingPattern = [regex]"host\s+all\s+all\s+$escapedSubnet\s+\S+"
 
-	$pattern = [regex]::Escape($Subnet)
-	$existing = Select-String -Path $HbaPath -Pattern $pattern -Quiet -ErrorAction SilentlyContinue
-	if ($existing) {
-		Write-Info "pg_hba.conf ya contiene la subred $Subnet."
+	if ($content -match [regex]::Escape($entry)) {
+		Write-Info "pg_hba.conf ya contiene la subred $Subnet con $AuthMethod."
 		return
 	}
 
 	Backup-File -Path $HbaPath
-	Add-Content -Path $HbaPath -Value "`n# Agregado automaticamente para contenedores Docker`n$entry"
-	Write-Success "Entrada pg_hba.conf agregada para $Subnet."
+
+	if ($existingPattern.IsMatch($content)) {
+		$content = $existingPattern.Replace($content, $entry, 1)
+		Write-Info "Entrada existente para $Subnet actualizada a $AuthMethod."
+	} else {
+		$content += "`n# Agregado automaticamente para contenedores Docker`n$entry"
+		Write-Success "Entrada pg_hba.conf agregada para $Subnet."
+	}
+
+	Set-Content -Path $HbaPath -Value $content -Encoding UTF8
 }
 
 function Ensure-FirewallRule {
@@ -159,7 +169,7 @@ if (-not (Test-Path $confPath)) { throw "No se encontró $confPath" }
 if (-not (Test-Path $hbaPath)) { throw "No se encontró $hbaPath" }
 
 Ensure-ListenAddresses -ConfPath $confPath
-Ensure-HbaEntry -HbaPath $hbaPath -Subnet $DockerSubnet
+Ensure-HbaEntry -HbaPath $hbaPath -Subnet $DockerSubnet -AuthMethod "scram-sha-256"
 Ensure-FirewallRule -Subnet $DockerSubnet -Port $PostgresPort
 Restart-PostgresService -ServiceName $PostgresServiceName
 

@@ -2,6 +2,8 @@
 
 > Plataforma completa para planear operaciones diarias, asignar vehículos y registrar entregas con evidencia fotográfica.
 
+> 📘 ¿Necesitas un checklist corto de qué hacer en tu laptop vs en el servidor? Revisa `docs/local-vs-server-playbook.md`.
+
 ## 🧱 Stack tecnológico
 
 - **Frontend**: Next.js 14 (React 18, TypeScript, Tailwind CSS, Axios)
@@ -49,6 +51,8 @@ Características actuales:
 
 ### Flujo para publicar una actualización
 
+> ⚡ Para hacerlo en un solo comando usa `powershell -ExecutionPolicy Bypass -File .\scripts\refresh-hybrid-stack.ps1 -HostIp <IP-estable>` y luego salta a la verificación. El script ejecuta down/build/up, recrea los `portproxy` y corre health checks. El paso a paso completo está en `docs/guia-despliegue-hibrido.md`.
+
 1. **Actualizar código**
 
    ```powershell
@@ -62,7 +66,7 @@ Características actuales:
    powershell -ExecutionPolicy Bypass -File .\scripts\enable-postgres-docker.ps1
    ```
 
-   - Ajusta `listen_addresses`, `pg_hba.conf` y el firewall para la subred `172.16.0.0/12` (todas las redes NAT que usa Docker en Windows).
+   - Ajusta `listen_addresses`, `pg_hba.conf` (método `scram-sha-256`) y el firewall para la subred `172.16.0.0/12` (todas las redes NAT que usa Docker en Windows).
    - Repite sólo si reinstalas PostgreSQL o cambias el puerto.
 
 3. **Configurar conexión a PostgreSQL para los contenedores**
