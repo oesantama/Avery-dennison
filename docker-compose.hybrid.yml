@@ -18,7 +18,7 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
       UPLOAD_DIR: uploads
     volumes:
-      - backend_uploads:C:\\app\\uploads
+      - backend_uploads:c:/app/uploads
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
