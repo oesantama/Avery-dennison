@@ -107,18 +107,19 @@ export const authApi = {
     return response.data;
   },
 
-  getMyPermissions: async (): Promise<{ 
+  getMyPermissions: async (): Promise<{
     pages: string[];
-    permissions: Record<string, {
-      puede_ver: boolean;
-      puede_crear: boolean;
-      puede_editar: boolean;
-      puede_borrar: boolean;
-    }>;
+    permissions: Record<
+      string,
+      {
+        puede_ver: boolean;
+        puede_crear: boolean;
+        puede_editar: boolean;
+        puede_borrar: boolean;
+      }
+    >;
   }> => {
-    const response = await api.get(
-      '/api/auth/my-permissions'
-    );
+    const response = await api.get('/api/auth/my-permissions');
     return response.data;
   },
 
@@ -301,7 +302,10 @@ export const usuariosApi = {
     id: number,
     data: { current_password: string; new_password: string }
   ): Promise<{ message: string }> => {
-    const response = await api.post(`/api/usuarios/${id}/change-password`, data);
+    const response = await api.post(
+      `/api/usuarios/${id}/change-password`,
+      data
+    );
     return response.data;
   },
 };
