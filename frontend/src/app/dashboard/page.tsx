@@ -78,7 +78,6 @@ export default function DashboardPage() {
     const dataToExport = filteredEntregas.map((entrega) => ({
       'N° Factura': entrega.numero_factura || '-',
       'Cliente': entrega.cliente || '-',
-      'Dirección': entrega.direccion || '-',
       'Fecha Operación': new Date(entrega.fecha_operacion).toLocaleDateString('es-CO'),
       'Fecha Cumplido': entrega.fecha_cumplido 
         ? new Date(entrega.fecha_cumplido).toLocaleString('es-CO')
