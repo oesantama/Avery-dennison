@@ -61,8 +61,7 @@ export default function DashboardPage() {
       return (
         entrega.numero_factura?.toLowerCase().includes(term) ||
         entrega.cliente?.toLowerCase().includes(term) ||
-        entrega.estado?.toLowerCase().includes(term) ||
-        entrega.direccion?.toLowerCase().includes(term)
+        entrega.estado?.toLowerCase().includes(term)
       );
     });
     setFilteredEntregas(filtered);
