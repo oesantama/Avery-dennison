@@ -117,9 +117,26 @@ function Get-ContainerIp {
         throw "No se pudo inspeccionar el contenedor $ContainerName"
     }
 
-    $network = $raw[0].NetworkSettings.Networks.$NetworkName
+    $networks = $raw[0].NetworkSettings.Networks
+    if (-not $networks) {
+        throw "El contenedor $ContainerName no tiene redes asociadas"
+    }
+
+    $network = $networks.$NetworkName
     if (-not $network) {
-        throw "El contenedor $ContainerName no está conectado a la red $NetworkName"
+        $matching = $networks.PSObject.Properties |
+            Where-Object { $_.Name -like "*$NetworkName" } |
+            Select-Object -First 1
+
+        if ($matching) {
+            $network = $matching.Value
+            Write-Warn "Usando red detectada '$($matching.Name)' para $ContainerName"
+        }
+    }
+
+    if (-not $network) {
+        $available = ($networks.PSObject.Properties.Name -join ', ')
+        throw "El contenedor $ContainerName no está conectado a una red que termine en '$NetworkName'. Redes disponibles: $available"
     }
 
     return $network.IPAddress
