@@ -1,6 +1,7 @@
 # 🚀 SOLUCIÓN RÁPIDA - Error 500 en IIS
 
 ## ❌ Problema
+
 El `web.config` con URL Rewrite causa error 500 porque falta el módulo URL Rewrite de IIS.
 
 ## ✅ SOLUCIÓN SIMPLE (SIN IIS)
@@ -8,6 +9,7 @@ El `web.config` con URL Rewrite causa error 500 porque falta el módulo URL Rewr
 ### Opción 1: Solo usar el puerto 8035 (MÁS SIMPLE) ⭐
 
 **EN EL SERVIDOR:**
+
 ```powershell
 # 1. Ir al proyecto
 cd C:\M7Aplicaciones\Avery\Avery-dennison
@@ -43,6 +45,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 **El script `setup-iis.ps1` hace TODO automáticamente:**
+
 - ✅ Instala IIS (si no está instalado)
 - ✅ Crea el sitio web
 - ✅ Copia `index.html` y `web.config`
@@ -51,6 +54,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 - ✅ Inicia el sitio
 
 **Resultado:**
+
 - `http://localhost` → Redirige a `http://avery.millasiete.com:8035`
 - `http://avery.millasiete.com` → Redirige a `http://avery.millasiete.com:8035`
 
@@ -85,18 +89,19 @@ cd C:\M7Aplicaciones\Avery
 
 ## 📊 ¿Qué hace cada archivo?
 
-| Archivo | Función |
-|---------|---------|
-| `index.html` | Redirección automática HTML (NO requiere módulos) |
-| `web.config` | Configuración IIS básica (SIN URL Rewrite) |
+| Archivo           | Función                                              |
+| ----------------- | ---------------------------------------------------- |
+| `index.html`      | Redirección automática HTML (NO requiere módulos)    |
+| `web.config`      | Configuración IIS básica (SIN URL Rewrite)           |
 | `start-avery.bat` | Inicia Docker automáticamente desde carpeta correcta |
-| `setup-iis.ps1` | Configura IIS completamente de forma automática |
+| `setup-iis.ps1`   | Configura IIS completamente de forma automática      |
 
 ---
 
 ## 🔧 Troubleshooting
 
 ### Error: "Puerto 80 ya en uso"
+
 ```powershell
 # Detener Default Web Site
 Import-Module WebAdministration
@@ -104,6 +109,7 @@ Stop-Website -Name "Default Web Site"
 ```
 
 ### Error: "No se puede ejecutar setup-iis.ps1"
+
 ```powershell
 # Permitir ejecución de scripts
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
@@ -113,6 +119,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 ### Error: "index.html no redirige"
+
 ```powershell
 # Verificar que el archivo está en la carpeta correcta
 Test-Path C:\M7Aplicaciones\Avery\index.html
@@ -122,6 +129,7 @@ copy C:\M7Aplicaciones\Avery\Avery-dennison\index.html C:\M7Aplicaciones\Avery\
 ```
 
 ### Error: "Docker no inicia"
+
 ```powershell
 # Ver logs
 cd C:\M7Aplicaciones\Avery\Avery-dennison
@@ -147,6 +155,7 @@ git pull origin main
 **Eso es todo.** El script configura IIS y la redirección automáticamente.
 
 **URLs finales:**
+
 - ✅ `http://localhost` → Redirige a :8035
 - ✅ `http://avery.millasiete.com` → Redirige a :8035
 - ✅ `http://avery.millasiete.com:8035` → Aplicación directa

@@ -1,5 +1,8 @@
 # Docker Compose Híbrido - PostgreSQL nativo + Contenedores Windows
 # PostgreSQL instalado en el host, Backend y Frontend containerizados
+#
+# IMPORTANTE: host.docker.internal funciona automáticamente en Docker Desktop
+# Para Docker Engine puro, usar la IP del host (ej: 192.168.1.100)
 
 services:
   # Backend FastAPI (Windows Container)
@@ -11,7 +14,9 @@ services:
     ports:
       - '3035:3035'
     environment:
-      # Conectar a PostgreSQL en el host usando host.docker.internal
+      # Conectar a PostgreSQL en el host
+      # OPCIÓN 1: host.docker.internal (funciona con Docker Desktop)
+      # OPCIÓN 2: IP del host (ej: 192.168.1.100) si falla host.docker.internal
       DATABASE_URL: postgresql://postgres:yourpassword@host.docker.internal:5432/vehiculos_operacion
       SECRET_KEY: your-secret-key-here-change-in-production
       ALGORITHM: HS256
@@ -19,8 +24,9 @@ services:
       UPLOAD_DIR: uploads
     volumes:
       - backend_uploads:c:/app/uploads
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    # extra_hosts solo necesario si host.docker.internal no funciona
+    # extra_hosts:
+    #   - "host.docker.internal:192.168.1.100"  # Cambiar por IP real del servidor
     networks:
       - vehiculos-network
 
