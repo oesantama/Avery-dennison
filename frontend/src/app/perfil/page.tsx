@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/contexts/ToastContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
-import { usuariosApi } from '@/lib/api';
-import { FiUser, FiMail, FiPhone, FiLock, FiSave } from 'react-icons/fi';
 import SimpleLoader from '@/components/ui/SimpleLoader';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
+import { usuariosApi } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { FiLock, FiMail, FiPhone, FiSave, FiUser } from 'react-icons/fi';
 
 export default function PerfilPage() {
   const router = useRouter();
@@ -46,12 +46,15 @@ export default function PerfilPage() {
         email: formData.email,
         numero_celular: formData.numero_celular,
       });
-      showToast({ message: 'Perfil actualizado exitosamente', type: 'success' });
+      showToast({
+        message: 'Perfil actualizado exitosamente',
+        type: 'success',
+      });
     } catch (error: any) {
       console.error('Error updating profile:', error);
       showToast({
         message: error.response?.data?.detail || 'Error al actualizar perfil',
-        type: 'error'
+        type: 'error',
       });
     } finally {
       setLoading(false);
@@ -69,7 +72,10 @@ export default function PerfilPage() {
     }
 
     if (passwordData.new_password.length < 6) {
-      showToast({ message: 'La contraseña debe tener al menos 6 caracteres', type: 'error' });
+      showToast({
+        message: 'La contraseña debe tener al menos 6 caracteres',
+        type: 'error',
+      });
       return;
     }
 
@@ -79,7 +85,10 @@ export default function PerfilPage() {
         current_password: passwordData.current_password,
         new_password: passwordData.new_password,
       });
-      showToast({ message: 'Contraseña actualizada exitosamente', type: 'success' });
+      showToast({
+        message: 'Contraseña actualizada exitosamente',
+        type: 'success',
+      });
       setPasswordData({
         current_password: '',
         new_password: '',
@@ -89,7 +98,7 @@ export default function PerfilPage() {
       console.error('Error changing password:', error);
       showToast({
         message: error.response?.data?.detail || 'Error al cambiar contraseña',
-        type: 'error'
+        type: 'error',
       });
     } finally {
       setLoading(false);
@@ -214,9 +223,7 @@ export default function PerfilPage() {
                 minLength={6}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Mínimo 6 caracteres
-              </p>
+              <p className="mt-1 text-xs text-gray-500">Mínimo 6 caracteres</p>
             </div>
 
             <div>
