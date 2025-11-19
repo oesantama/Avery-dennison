@@ -35,7 +35,27 @@ import type {
 } from '@/types';
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3035';
+const inferBrowserApiUrl = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const { protocol, hostname, port } = window.location;
+
+  // Si ya estamos en el puerto del backend, usamos el origin completo
+  if (port === '3035') {
+    return window.location.origin;
+  }
+
+  return `${protocol}//${hostname}:3035`;
+};
+
+const envApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+const shouldIgnoreEnvApiUrl = envApiUrl?.includes('localhost');
+const API_URL =
+  !envApiUrl || shouldIgnoreEnvApiUrl
+    ? inferBrowserApiUrl() || 'http://localhost:3035'
+    : envApiUrl;
 
 const api = axios.create({
   baseURL: API_URL,
