@@ -11,19 +11,35 @@ Write-Host ""
 # Detectar IP del host
 Write-Host "[*] Detectando IP del servidor..." -ForegroundColor Cyan
 
-$hostIP = (Get-NetIPAddress | Where-Object {
+$ipCandidates = Get-NetIPAddress | Where-Object {
     $_.AddressFamily -eq "IPv4" -and 
     $_.IPAddress -notlike "127.*" -and 
     $_.IPAddress -notlike "169.254.*" -and
     ($_.PrefixOrigin -eq "Dhcp" -or $_.PrefixOrigin -eq "Manual")
-} | Select-Object -First 1).IPAddress
+} | Sort-Object -Property InterfaceMetric
 
-if (-not $hostIP) {
-    Write-Host "[!] No se pudo detectar IP automaticamente. Usando localhost" -ForegroundColor Yellow
-    $hostIP = "127.0.0.1"
+$preferredCandidates = $ipCandidates | Where-Object {
+    $_.InterfaceAlias -notmatch 'vEthernet|Hyper-V|Docker|Virtual'
 }
 
-Write-Host "[OK] IP detectada: $hostIP" -ForegroundColor Green
+$selectedInterface = if ($preferredCandidates) {
+    $preferredCandidates | Select-Object -First 1
+} elseif ($ipCandidates) {
+    $ipCandidates | Select-Object -First 1
+} else {
+    $null
+}
+
+if ($selectedInterface) {
+    $hostIP = $selectedInterface.IPAddress
+    $interfaceName = $selectedInterface.InterfaceAlias
+} else {
+    Write-Host "[!] No se pudo detectar IP automaticamente. Usando localhost" -ForegroundColor Yellow
+    $hostIP = "127.0.0.1"
+    $interfaceName = "Loopback"
+}
+
+Write-Host "[OK] IP detectada: $hostIP ($interfaceName)" -ForegroundColor Green
 Write-Host ""
 
 # Mostrar configuracion actual
