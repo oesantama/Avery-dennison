@@ -5,7 +5,7 @@ services:
     env: docker
     plan: free
     region: oregon
-    
+
   # Backend API
   - type: web
     name: vehiculos-backend
@@ -19,7 +19,7 @@ services:
           name: vehiculos-db
           property: connectionString
     healthCheckPath: /health
-    
+
   # Frontend
   - type: web
     name: vehiculos-frontend
