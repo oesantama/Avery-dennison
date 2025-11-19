@@ -12,24 +12,30 @@ Este procedimiento deja el backend y frontend arriba en el Windows Server usando
 ## Paso a paso recomendado
 
 1. **Entrar al proyecto**
+
    ```powershell
    cd C:\M7Aplicaciones\Avery\Avery-dennison
    git pull origin main
    ```
 
 2. **Detectar la IP estable del servidor**
+
    ```powershell
    Get-NetIPAddress |
      Where-Object { $_.AddressFamily -eq "IPv4" -and $_.InterfaceAlias -notmatch "vEthernet|Hyper-V|Docker|Loopback" } |
      Select-Object InterfaceAlias, IPAddress
    ```
+
    - Si aparece `Ethernet 6 77.93.155.134`, esa es la IP que debes usar.
 
 3. **Ejecutar el script automático**
+
    ```powershell
    powershell -ExecutionPolicy Bypass -File .\scripts\refresh-hybrid-stack.ps1 -HostIp 77.93.155.134
    ```
+
    El script hace lo siguiente:
+
    - Actualiza `docker-compose.hybrid.yml` (DATABASE_URL + extra_hosts).
    - Hace `docker-compose down`, `build --no-cache` y `up -d`.
    - Lee las IPs reales de `vehiculos-backend` y `vehiculos-frontend`.
@@ -37,6 +43,7 @@ Este procedimiento deja el backend y frontend arriba en el Windows Server usando
    - Lanza pruebas rápidas (`/healthz` y frontend).
 
 4. **Validar manualmente (por si acaso)**
+
    ```powershell
    docker-compose -f docker-compose.hybrid.yml ps
    netsh interface portproxy show v4tov4
@@ -50,14 +57,14 @@ Este procedimiento deja el backend y frontend arriba en el Windows Server usando
 
 ## Si necesitas hacerlo a mano (sin script)
 
-| Paso | Comando clave |
-| --- | --- |
-| Encontrar IP física | `Get-NetIPAddress ...` |
-| Editar compose | `configure-network-simple.ps1` opción 3 con la IP detectada |
-| Reconstruir stack | `docker-compose -f docker-compose.hybrid.yml down && ... up -d` |
-| Portproxy backend | `netsh interface portproxy add v4tov4 listenport=3035 ...` usando la IP interna del contenedor |
-| Portproxy frontend | Igual pero `listenport=8036` conectando al puerto 8035 del contenedor |
-| Health checks | `Invoke-WebRequest http://localhost:3035/healthz` y `http://localhost:8036` |
+| Paso                | Comando clave                                                                                  |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| Encontrar IP física | `Get-NetIPAddress ...`                                                                         |
+| Editar compose      | `configure-network-simple.ps1` opción 3 con la IP detectada                                    |
+| Reconstruir stack   | `docker-compose -f docker-compose.hybrid.yml down && ... up -d`                                |
+| Portproxy backend   | `netsh interface portproxy add v4tov4 listenport=3035 ...` usando la IP interna del contenedor |
+| Portproxy frontend  | Igual pero `listenport=8036` conectando al puerto 8035 del contenedor                          |
+| Health checks       | `Invoke-WebRequest http://localhost:3035/healthz` y `http://localhost:8036`                    |
 
 ## Solución de problemas
 
