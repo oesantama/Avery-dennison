@@ -121,11 +121,17 @@ $content = Get-Content $composeFile -Raw
 Write-Host "[*] Modificando DATABASE_URL..." -ForegroundColor Cyan
 
 $newDatabaseUrl = "postgresql://postgres:yourpassword@$connectionHost`:5432/vehiculos_operacion"
+$databaseUrlPattern = 'DATABASE_URL\s*[:=]\s*postgresql://[^@]+@[^:]+:5432/vehiculos_operacion'
 
-# Reemplazar DATABASE_URL (busca el patron y reemplaza)
-$content = $content -replace 'DATABASE_URL=postgresql://[^@]+@[^:]+:5432/vehiculos_operacion', "DATABASE_URL=$newDatabaseUrl"
-
-Write-Host "[OK] DATABASE_URL actualizado: $newDatabaseUrl" -ForegroundColor Green
+if ($content -match $databaseUrlPattern) {
+    # Reemplazar DATABASE_URL compatible con formato YAML (:) o env (=)
+    $content = $content -replace $databaseUrlPattern, "DATABASE_URL: $newDatabaseUrl"
+    Write-Host "[OK] DATABASE_URL actualizado: $newDatabaseUrl" -ForegroundColor Green
+} else {
+    Write-Host "[!] No se pudo localizar DATABASE_URL, verificando insercion manual..." -ForegroundColor Yellow
+    $content = $content -replace '(environment:\s*(?:\r?\n\s{6,}[^\r\n]+)+)', "$1`n      DATABASE_URL: $newDatabaseUrl"
+    Write-Host "[OK] DATABASE_URL agregado manualmente: $newDatabaseUrl" -ForegroundColor Green
+}
 
 # Modificar extra_hosts segun sea necesario
 if ($needsExtraHosts) {

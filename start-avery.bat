@@ -70,7 +70,7 @@ echo ========================================
 echo   SISTEMA INICIADO EXITOSAMENTE
 echo ========================================
 echo.
-echo   Frontend: http://avery.millasiete.com:8035
+echo   Frontend: http://avery.millasiete.com:8036
 echo   Backend:  http://avery.millasiete.com:3035
 echo   Logs:     docker-compose -f docker-compose.hybrid.yml logs -f
 echo.
