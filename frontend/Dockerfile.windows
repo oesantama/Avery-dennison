@@ -37,6 +37,17 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Construir la aplicación
 RUN npm run build
 
+# Copiar assets necesarios al build standalone
+RUN if (Test-Path '.\\public') { \
+        if (-not (Test-Path '.\\.next\\standalone\\public')) { New-Item -ItemType Directory -Path '.\\.next\\standalone\\public' | Out-Null }; \
+        Copy-Item -Path '.\\public\\*' -Destination '.\\.next\\standalone\\public' -Recurse -Force \
+    }
+
+RUN if (Test-Path '.\\.next\\static') { \
+        if (-not (Test-Path '.\\.next\\standalone\\.next')) { New-Item -ItemType Directory -Path '.\\.next\\standalone\\.next' | Out-Null }; \
+        Copy-Item -Path '.\\.next\\static' -Destination '.\\.next\\standalone\\.next\\static' -Recurse -Force \
+    }
+
 # Exponer el puerto
 EXPOSE 8035
 
@@ -45,5 +56,8 @@ ENV NODE_ENV=production
 ENV PORT=8035
 ENV HOSTNAME="0.0.0.0"
 
+# Directorio de trabajo para ejecución standalone
+WORKDIR C:\\app\\.next\\standalone
+
 # Comando para ejecutar la aplicación directamente desde el build standalone
-CMD ["C:\\Program Files\\nodejs\\node.exe", ".next\\standalone\\server.js"]
+CMD ["C:\\Program Files\\nodejs\\node.exe", "server.js"]
