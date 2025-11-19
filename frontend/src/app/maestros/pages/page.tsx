@@ -85,11 +85,11 @@ export default function PagesPage() {
 
     // ✅ Validar permisos
     if (editingId && !canEditPage) {
-      showToast({ message: 'No tienes permiso para editar páginas', type: 'error' });
+      showToast('No tienes permiso para editar páginas', 'error');
       return;
     }
     if (!editingId && !canCreatePage) {
-      showToast({ message: 'No tienes permiso para crear páginas', type: 'error' });
+      showToast('No tienes permiso para crear páginas', 'error');
       return;
     }
 
@@ -98,10 +98,10 @@ export default function PagesPage() {
 
       if (editingId) {
         await pagesApi.update(editingId, formData as PageUpdate);
-        showToast({ message: 'Página actualizada correctamente', type: 'success' });
+        showToast('Página actualizada correctamente', 'success');
       } else {
         await pagesApi.create(formData);
-        showToast({ message: 'Página creada correctamente', type: 'success' });
+        showToast('Página creada correctamente', 'success');
       }
 
       await loadData();
@@ -118,7 +118,7 @@ export default function PagesPage() {
 
   const handleEdit = (page: PageType) => {
     if (!canEditPage && !canViewPage) {
-      showToast({ message: 'No tienes permiso para ver esta página', type: 'error' });
+      showToast('No tienes permiso para ver esta página', 'error');
       return;
     }
 
@@ -137,7 +137,7 @@ export default function PagesPage() {
 
   const handleDelete = (id: number) => {
     if (!canDeletePage) {
-      showToast({ message: 'No tienes permiso para eliminar páginas', type: 'error' });
+      showToast('No tienes permiso para eliminar páginas', 'error');
       return;
     }
 
@@ -149,7 +149,7 @@ export default function PagesPage() {
       onConfirm: async () => {
         try {
           await pagesApi.delete(id);
-          showToast({ message: 'Página eliminada correctamente', type: 'success' });
+          showToast('Página eliminada correctamente', 'success');
           await loadData();
         } catch (error: any) {
           showToast(
