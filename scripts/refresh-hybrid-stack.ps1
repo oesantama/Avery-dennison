@@ -64,14 +64,15 @@ function Update-ComposeFile {
     $content = Get-Content $Path -Raw
 
     $databaseUrl = "postgresql://$DbUser`:$DbPass@$HostIpValue`:5432/$DbName"
-    $dbPattern = 'DATABASE_URL:\s*"postgresql://[^"]+"'
+    $dbPattern = 'DATABASE_URL:\s*"postgresql://[^\"]+"'
     if ($content -match $dbPattern) {
-        $content = $content -replace $dbPattern, "DATABASE_URL: \"$databaseUrl\""
+        $replacement = ("DATABASE_URL: ""{0}""" -f $databaseUrl)
+        $content = $content -replace $dbPattern, $replacement
     } else {
         throw "No se encontró la clave DATABASE_URL en $Path"
     }
 
-    $extraHostBlock = "    extra_hosts:`r`n      - \"host.docker.internal:$HostIpValue\""
+    $extraHostBlock = ("    extra_hosts:`r`n      - ""host.docker.internal:{0}""" -f $HostIpValue)
     $extraPattern = '    extra_hosts:(?:\s*\r?\n\s+- \"host\.docker\.internal:[^\"]+\")+'
     if ($content -match $extraPattern) {
         $content = $content -replace $extraPattern, $extraHostBlock
@@ -92,13 +93,53 @@ function Update-ComposeFile {
 function Run-Compose {
     param(
         [string]$ComposeFilePath,
-        [string[]]$Args
+        [Alias("Args")][string[]]$ComposeArgs
     )
 
     $cmd = "docker-compose"
-    $fullArgs = @("-f", $ComposeFilePath) + $Args
-    Write-Info "$cmd $($fullArgs -join ' ')"
-    & $cmd @fullArgs
+    $arguments = @("-f", $ComposeFilePath)
+    if ($ComposeArgs) {
+        $arguments += $ComposeArgs
+    }
+
+    Write-Info "$cmd $($arguments -join ' ')"
+    & $cmd @arguments
+}
+
+function Get-ContainerIp {
+    param(
+        [string]$ContainerName,
+        [string]$NetworkName
+    )
+
+    $raw = docker inspect $ContainerName | ConvertFrom-Json
+    if (-not $raw -or -not $raw[0]) {
+        throw "No se pudo inspeccionar el contenedor $ContainerName"
+    }
+
+    $networks = $raw[0].NetworkSettings.Networks
+    if (-not $networks) {
+        throw "El contenedor $ContainerName no tiene redes asociadas"
+    }
+
+    $network = $networks.$NetworkName
+    if (-not $network) {
+        $matching = $networks.PSObject.Properties |
+            Where-Object { $_.Name -like "*$NetworkName" } |
+            Select-Object -First 1
+
+        if ($matching) {
+            $network = $matching.Value
+            Write-Warn "Usando red detectada '$($matching.Name)' para $ContainerName"
+        }
+    }
+
+    if (-not $network) {
+        $available = ($networks.PSObject.Properties.Name -join ', ')
+        throw "El contenedor $ContainerName no está conectado a una red que termine en '$NetworkName'. Redes disponibles: $available"
+    }
+
+    return $network.IPAddress
 }
 
 function Refresh-PortProxy {
@@ -132,8 +173,8 @@ Run-Compose -ComposeFilePath $ComposeFile -Args @("build", "--no-cache")
 Run-Compose -ComposeFilePath $ComposeFile -Args @("up", "-d")
 
 Write-Section "3) Obtener IPs internas"
-$backendIp = docker inspect -f "{{ .NetworkSettings.Networks.vehiculos-network.IPAddress }}" $BackendContainer
-$frontendIp = docker inspect -f "{{ .NetworkSettings.Networks.vehiculos-network.IPAddress }}" $FrontendContainer
+$backendIp = Get-ContainerIp -ContainerName $BackendContainer -NetworkName "vehiculos-network"
+$frontendIp = Get-ContainerIp -ContainerName $FrontendContainer -NetworkName "vehiculos-network"
 Write-Ok "Backend: $backendIp"
 Write-Ok "Frontend: $frontendIp"
 
