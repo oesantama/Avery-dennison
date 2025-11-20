@@ -29,16 +29,11 @@ export default function DashboardPage() {
 
   const loadDashboardData = async () => {
     try {
-      // ✅ Obtener fecha de hoy en formato YYYY-MM-DD
-      const hoy = new Date().toISOString().split('T')[0];
-      
       const [kpisData, entregasData] = await Promise.all([
         dashboardApi.getKPIs(),
-        // ✅ Filtrar entregas solo de hoy
-        entregasApi.list({ 
-          limit: 10,
-          fecha_operacion_inicio: hoy,
-          fecha_operacion_fin: hoy
+        // Cargar las últimas 10 entregas
+        entregasApi.list({
+          limit: 10
         }),
       ]);
       setKpis(kpisData);
