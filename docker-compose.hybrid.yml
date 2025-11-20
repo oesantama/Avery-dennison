@@ -51,6 +51,10 @@ services:
 networks:
   vehiculos-network:
     driver: nat
+    ipam:
+      config:
+        - subnet: 172.30.224.0/24
+          gateway: 172.30.224.1
 
 volumes:
   backend_uploads:
