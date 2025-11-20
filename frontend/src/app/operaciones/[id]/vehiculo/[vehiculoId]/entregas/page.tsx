@@ -26,7 +26,7 @@ export default function VehiculoEntregasPage() {
   const operacionId = parseInt(params.id as string);
   const vehiculoId = parseInt(params.vehiculoId as string);
   const { user, loading: authLoading } = useAuth();
-  const { showToast } = useToast();
+  const { showToast, showError, showSuccess } = useToast();
 
   const [operacion, setOperacion] = useState<OperacionDiaria | null>(null);
   const [vehiculo, setVehiculo] = useState<VehiculoOperacion | null>(null);
@@ -68,7 +68,7 @@ export default function VehiculoEntregasPage() {
       setEntregas(entregasData);
     } catch (error) {
       console.error('Error loading data:', error);
-      showToast('Error al cargar los datos', 'error');
+      showError('Error al cargar los datos');
     } finally {
       setLoading(false);
     }
