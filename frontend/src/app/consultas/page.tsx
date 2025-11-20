@@ -9,11 +9,3 @@ export default function ConsultasRedirectPage() {
   }, [router]);
   return null;
 }
-
-export default function ConsultasRedirectPage() {
-  const router = useRouter();
-  useEffect(() => {
-    router.replace('/consultas/entregas');
-  }, [router]);
-  return null;
-}
