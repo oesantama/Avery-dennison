@@ -17,7 +17,7 @@ services:
       # Conectar a PostgreSQL en el host
       # OPCIÓN 1: host.docker.internal (funciona con Docker Desktop)
       # OPCIÓN 2: IP del host (ej: 192.168.1.100) si falla host.docker.internal
-      DATABASE_URL: "postgresql://postgres:Admin123!@172.29.208.1:5432/vehiculos_operacion"
+  DATABASE_URL: 'postgresql://postgres:Admin123!@172.30.224.1:5432/vehiculos_operacion'
       SECRET_KEY: your-secret-key-here-change-in-production
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
@@ -26,7 +26,7 @@ services:
       - backend_uploads:c:/app/uploads
     # extra_hosts solo necesario si host.docker.internal no funciona
     extra_hosts:
-      - "host.docker.internal:172.29.208.1"
+  - 'host.docker.internal:172.30.224.1'
     networks:
       - vehiculos-network
 
