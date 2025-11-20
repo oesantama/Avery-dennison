@@ -2,20 +2,20 @@
 
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
+import DataTable from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
-import DataTable, { Column } from '@/components/ui/DataTable';
+import SimpleLoader from '@/components/ui/SimpleLoader';
 import { useAuth } from '@/contexts/AuthContext';
 import { entregasApi } from '@/lib/api';
 import type { Entrega } from '@/types';
+import {
+  formatDateColombian,
+  formatDateTimeColombian,
+  getCurrentDateTimeColombian,
+} from '@/utils/dateFormat';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FiDownload, FiEye, FiFileText, FiSearch } from 'react-icons/fi';
-import SimpleLoader from '@/components/ui/SimpleLoader';
-import {
-  formatDateTimeColombian,
-  formatDateColombian,
-  getCurrentDateTimeColombian,
-} from '@/utils/dateFormat';
 
 export default function ConsultaEntregasPage() {
   const router = useRouter();
@@ -356,7 +356,9 @@ export default function ConsultaEntregasPage() {
             
             <div class="info-item">
               <div class="label">Fecha Operación</div>
-              <div class="value">${formatDateColombian(entrega.fecha_operacion)}</div>
+              <div class="value">${formatDateColombian(
+                entrega.fecha_operacion
+              )}</div>
             </div>
             
             ${
@@ -364,7 +366,9 @@ export default function ConsultaEntregasPage() {
                 ? `
             <div class="info-item">
               <div class="label">Fecha Cumplimiento</div>
-              <div class="value">${formatDateTimeColombian(entrega.fecha_cumplido)}</div>
+              <div class="value">${formatDateTimeColombian(
+                entrega.fecha_cumplido
+              )}</div>
             </div>
             `
                 : '<div class="info-item"></div>'
@@ -409,7 +413,9 @@ export default function ConsultaEntregasPage() {
             entrega.fotos && entrega.fotos.length > 0
               ? `
           <div class="photos-section">
-            <div class="section-title">📷 Fotos de Evidencia (${entrega.fotos.length})</div>
+            <div class="section-title">📷 Fotos de Evidencia (${
+              entrega.fotos.length
+            })</div>
             <div class="photos-grid">
               ${entrega.fotos
                 .map(
@@ -427,7 +433,9 @@ export default function ConsultaEntregasPage() {
           }
           
           <div class="footer">
-            <p>Este documento es una representación digital de la entrega N° ${entrega.numero_factura}</p>
+            <p>Este documento es una representación digital de la entrega N° ${
+              entrega.numero_factura
+            }</p>
             <p>Generado automáticamente por el Sistema de Gestión de Entregas</p>
           </div>
           
@@ -606,11 +614,23 @@ export default function ConsultaEntregasPage() {
                 sortable: true,
                 render: (value) => {
                   if (value === 'pendiente')
-                    return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">Pendiente</span>;
+                    return (
+                      <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                        Pendiente
+                      </span>
+                    );
                   if (value === 'cumplido')
-                    return <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Cumplido</span>;
+                    return (
+                      <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                        Cumplido
+                      </span>
+                    );
                   if (value === 'no_cumplido')
-                    return <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">No Cumplido</span>;
+                    return (
+                      <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                        No Cumplido
+                      </span>
+                    );
                   return value;
                 },
               },
@@ -618,13 +638,17 @@ export default function ConsultaEntregasPage() {
                 key: 'fecha_cumplido',
                 label: 'Hora Cumplido',
                 sortable: true,
-                render: (value, item) => value && item.estado !== 'pendiente' ? formatDateTimeColombian(value) : '-',
+                render: (value, item) =>
+                  value && item.estado !== 'pendiente'
+                    ? formatDateTimeColombian(value)
+                    : '-',
               },
               {
                 key: 'usuario_cumplido_nombre',
                 label: 'Usuario',
                 sortable: true,
-                render: (value, item) => value && item.estado !== 'pendiente' ? value : '-',
+                render: (value, item) =>
+                  value && item.estado !== 'pendiente' ? value : '-',
               },
             ]}
             customActions={(entrega) => (
@@ -646,7 +670,9 @@ export default function ConsultaEntregasPage() {
               </>
             )}
             emptyMessage="No se encontraron entregas"
-            emptyIcon={<FiFileText className="mx-auto h-12 w-12 text-gray-400" />}
+            emptyIcon={
+              <FiFileText className="mx-auto h-12 w-12 text-gray-400" />
+            }
             searchPlaceholder="Buscar entrega..."
           />
         </Card>
@@ -712,27 +738,29 @@ export default function ConsultaEntregasPage() {
                 </p>
               </div>
 
-              {selectedEntrega.fecha_cumplido && selectedEntrega.estado !== 'pendiente' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Fecha/Hora Cumplido
-                  </label>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {formatDateTimeColombian(selectedEntrega.fecha_cumplido)}
-                  </p>
-                </div>
-              )}
+              {selectedEntrega.fecha_cumplido &&
+                selectedEntrega.estado !== 'pendiente' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Fecha/Hora Cumplido
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {formatDateTimeColombian(selectedEntrega.fecha_cumplido)}
+                    </p>
+                  </div>
+                )}
 
-              {selectedEntrega.usuario_cumplido_nombre && selectedEntrega.estado !== 'pendiente' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Usuario que Cerró
-                  </label>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {selectedEntrega.usuario_cumplido_nombre}
-                  </p>
-                </div>
-              )}
+              {selectedEntrega.usuario_cumplido_nombre &&
+                selectedEntrega.estado !== 'pendiente' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Usuario que Cerró
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {selectedEntrega.usuario_cumplido_nombre}
+                    </p>
+                  </div>
+                )}
             </div>
 
             {selectedEntrega.observacion && (
