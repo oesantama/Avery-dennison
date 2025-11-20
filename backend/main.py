@@ -42,6 +42,10 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:3001",
         "http://localhost:8035",  # Frontend URL
+        "http://avery.millasiete.com:8035",
+        "https://avery.millasiete.com:8035",
+        "http://avery.millasiete.com:8036",
+        "https://avery.millasiete.com:8036",
     ],
     allow_credentials=True,
     allow_methods=["*"],
