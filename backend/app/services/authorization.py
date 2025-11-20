@@ -1,13 +1,13 @@
 """
 Servicio de Autorización - Verifica permisos de usuarios
-✅ SOLO consulta tabla permisos_usuarios
-✅ NO mezcla con permisos de rol
-✅ Simple y directo
+✅ Consulta permisos de rol (permisos_rol)
+✅ Consulta permisos especiales de usuario (permisos_usuarios)
+✅ Los permisos de usuario sobrescriben los del rol
 """
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from typing import Optional, List
-from app.models import Usuario, Page, PermisosUsuario
+from app.models import Usuario, Page, PermisosUsuario, PermisosRol
 
 
 class AuthorizationService:
@@ -22,7 +22,9 @@ class AuthorizationService:
     ) -> bool:
         """
         ✅ Verifica si un usuario tiene un permiso específico en una página.
-        ✅ SOLO consulta permisos_usuarios (NO permisos de rol)
+        ✅ Consulta permisos del ROL del usuario (permisos_rol)
+        ✅ Consulta permisos especiales del usuario (permisos_usuarios)
+        ✅ Los permisos de usuario sobrescriben los del rol
 
         Args:
             db: Sesión de base de datos
@@ -38,26 +40,50 @@ class AuthorizationService:
         if not page:
             return False
 
-        # ✅ Buscar permiso del usuario (SOLO permisos_usuarios)
-        permiso = db.query(PermisosUsuario).filter(
+        # Obtener el usuario para conocer su rol
+        usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+        if not usuario:
+            return False
+
+        # Variable para almacenar el permiso final
+        tiene_permiso = False
+
+        # ✅ Primero, buscar permiso del ROL del usuario
+        if usuario.rol_id:
+            permiso_rol = db.query(PermisosRol).filter(
+                PermisosRol.rol_id == usuario.rol_id,
+                PermisosRol.page_id == page.id
+            ).first()
+
+            if permiso_rol:
+                # Verificar la acción específica en el rol
+                if accion == "ver":
+                    tiene_permiso = permiso_rol.puede_ver or False
+                elif accion == "crear":
+                    tiene_permiso = permiso_rol.puede_crear or False
+                elif accion == "editar":
+                    tiene_permiso = permiso_rol.puede_editar or False
+                elif accion == "eliminar":
+                    tiene_permiso = permiso_rol.puede_eliminar or False
+
+        # ✅ Luego, buscar permisos especiales del usuario (sobrescriben el rol)
+        permiso_usuario = db.query(PermisosUsuario).filter(
             PermisosUsuario.usuario_id == usuario_id,
             PermisosUsuario.page_id == page.id
         ).first()
 
-        if not permiso:
-            return False
+        if permiso_usuario:
+            # Los permisos de usuario sobrescriben los del rol
+            if accion == "ver":
+                tiene_permiso = permiso_usuario.puede_ver if permiso_usuario.puede_ver is not None else tiene_permiso
+            elif accion == "crear":
+                tiene_permiso = permiso_usuario.puede_crear if permiso_usuario.puede_crear is not None else tiene_permiso
+            elif accion == "editar":
+                tiene_permiso = permiso_usuario.puede_editar if permiso_usuario.puede_editar is not None else tiene_permiso
+            elif accion == "eliminar":
+                tiene_permiso = permiso_usuario.puede_eliminar if permiso_usuario.puede_eliminar is not None else tiene_permiso
 
-        # Verificar la acción específica
-        if accion == "ver":
-            return permiso.puede_ver or False
-        elif accion == "crear":
-            return permiso.puede_crear or False
-        elif accion == "editar":
-            return permiso.puede_editar or False
-        elif accion == "eliminar":
-            return permiso.puede_eliminar or False
-        else:
-            return False
+        return tiene_permiso
 
     @staticmethod
     def require_permission(

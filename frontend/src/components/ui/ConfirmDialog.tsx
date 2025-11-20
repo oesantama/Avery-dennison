@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { FiAlertTriangle, FiX } from 'react-icons/fi';
 
 interface ConfirmDialogProps {
@@ -23,7 +24,17 @@ export default function ConfirmDialog({
   cancelText = 'Cancelar',
   type = 'warning',
 }: ConfirmDialogProps) {
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   const getTypeStyles = () => {
     switch (type) {
@@ -50,7 +61,9 @@ export default function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto"
+      className={`fixed inset-0 z-50 overflow-y-auto transition-all duration-200 ${
+        isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+      }`}
       aria-labelledby="modal-title"
       role="dialog"
       aria-modal="true"
@@ -58,9 +71,10 @@ export default function ConfirmDialog({
       {/* Backdrop */}
       <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div
-          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+          className={`fixed inset-0 bg-gray-500 transition-opacity duration-200 ${
+            isOpen ? 'bg-opacity-75' : 'bg-opacity-0'
+          }`}
           aria-hidden="true"
-          onClick={onClose}
         ></div>
 
         {/* Center modal */}
@@ -71,7 +85,9 @@ export default function ConfirmDialog({
           &#8203;
         </span>
 
-        <div className="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+        <div className={`inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all duration-200 sm:my-8 sm:w-full sm:max-w-lg sm:align-middle ${
+          isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        }`}>
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="sm:flex sm:items-start">
               <div

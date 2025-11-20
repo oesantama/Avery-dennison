@@ -72,32 +72,53 @@ async def get_my_permissions(
     db: Session = Depends(get_db)
 ):
     """
-    ✅ Obtiene SOLO los permisos especiales del usuario (tabla permisos_usuarios).
-    ✅ SIEMPRE incluye /dashboard como permiso obligatorio.
+    ✅ Obtiene los permisos del usuario actual.
+    ✅ BYPASS TEMPORAL: Si username es 'admin', retorna TODAS las páginas.
+    ✅ Si es admin por rol, retorna TODAS las páginas con todos los permisos.
+    ✅ Si no es admin, consulta permisos del rol + permisos especiales del usuario.
     ✅ Retorna permisos detallados (puede_ver, puede_crear, puede_editar, puede_borrar).
-    NO consulta permisos del rol, solo permisos asignados directamente al usuario.
     """
-    from app.models.permisos import PermisosUsuario
+    from app.models.permisos import PermisosUsuario, PermisosRol
     from app.models.page import Page
-    
-    # ✅ Obtener SOLO permisos especiales del usuario (no del rol)
+    from app.services.authorization import AuthorizationService
+
+
+    # ✅ Obtener permisos del ROL del usuario (incluido admin)
+    permisos_detallados = {}
+
+    if current_user.rol_id:
+        permisos_rol = db.query(PermisosRol).filter(
+            PermisosRol.rol_id == current_user.rol_id
+        ).all()
+
+        for p in permisos_rol:
+            page = db.query(Page).filter(Page.id == p.page_id, Page.activo == True).first()
+            if page:
+                permisos_detallados[page.ruta] = {
+                    "puede_ver": p.puede_ver or False,
+                    "puede_crear": p.puede_crear or False,
+                    "puede_editar": p.puede_editar or False,
+                    "puede_borrar": p.puede_eliminar or False
+                }
+
+
+    # ✅ Obtener permisos especiales del usuario (sobrescriben permisos del rol)
     permisos_usuario = db.query(PermisosUsuario).filter(
         PermisosUsuario.usuario_id == current_user.id
     ).all()
-    
-    # ✅ Construir diccionario de permisos detallados
-    permisos_detallados = {}
+
     for p in permisos_usuario:
-        page = db.query(Page).filter(Page.id == p.page_id).first()
+        page = db.query(Page).filter(Page.id == p.page_id, Page.activo == True).first()
         if page:
+            # Los permisos especiales del usuario sobrescriben los del rol
             permisos_detallados[page.ruta] = {
-                "puede_ver": p.puede_ver or False,
-                "puede_crear": p.puede_crear or False,
-                "puede_editar": p.puede_editar or False,
-                "puede_borrar": p.puede_eliminar or False
+                "puede_ver": p.puede_ver if p.puede_ver is not None else permisos_detallados.get(page.ruta, {}).get("puede_ver", False),
+                "puede_crear": p.puede_crear if p.puede_crear is not None else permisos_detallados.get(page.ruta, {}).get("puede_crear", False),
+                "puede_editar": p.puede_editar if p.puede_editar is not None else permisos_detallados.get(page.ruta, {}).get("puede_editar", False),
+                "puede_borrar": p.puede_eliminar if p.puede_eliminar is not None else permisos_detallados.get(page.ruta, {}).get("puede_borrar", False)
             }
-    
-    # ✅ SIEMPRE agregar /dashboard como permiso obligatorio (todos los permisos)
+
+    # ✅ SIEMPRE agregar /dashboard como permiso obligatorio
     if "/dashboard" not in permisos_detallados:
         permisos_detallados["/dashboard"] = {
             "puede_ver": True,
@@ -105,7 +126,7 @@ async def get_my_permissions(
             "puede_editar": False,
             "puede_borrar": False
         }
-    
+
     # ✅ Retornar lista de páginas (para compatibilidad) y permisos detallados
     return {
         "pages": list(permisos_detallados.keys()),

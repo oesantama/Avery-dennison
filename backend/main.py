@@ -5,7 +5,6 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pathlib import Path
 import logging
-import os
 import traceback
 from app.database import engine, Base
 from app.routes import auth, operaciones, entregas, dashboard, usuarios, rbac, vehiculos, tipos_vehiculo, permisos_rol, permisos_usuario
@@ -37,31 +36,22 @@ app = FastAPI(
 app.add_middleware(LoggingMiddleware)
 
 # CORS configuration
-default_allowed_origins = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:8035",
-    "http://localhost:8036",
-    "http://avery.millasiete.com",
-    "http://avery.millasiete.com:8036",
-    "http://avery.millasiete.com:3035",
-]
-
-extra_allowed = os.getenv("ALLOWED_ORIGINS", "")
-if extra_allowed:
-    default_allowed_origins.extend(
-        [origin.strip() for origin in extra_allowed.split(",") if origin.strip()]
-    )
-
-allowed_origins = sorted(set(default_allowed_origins))
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+# Middleware para Private Network Access (CORS-RFC1918)
+@app.middleware("http")
+async def add_private_network_access_headers(request: Request, call_next):
+    response = await call_next(request)
+    # Headers para permitir acceso desde redes públicas a privadas
+    response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
 
 # Global exception handler to ensure CORS headers are always sent
 @app.exception_handler(Exception)

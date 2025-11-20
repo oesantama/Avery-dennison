@@ -302,7 +302,7 @@ export interface PermisoUsuario {
 }
 
 export interface PermisoUsuarioCreate {
-  usuario_id: number;
+  usuario_id?: number; // Opcional porque en bulk va en la URL
   page_id: number;
   estado?: 'activo' | 'inactivo';
   puede_ver?: boolean;

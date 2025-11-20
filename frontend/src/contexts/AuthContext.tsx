@@ -100,17 +100,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const permissionsData = await authApi.getMyPermissions();
         const allowedPages = permissionsData.pages || [];
-        
-        // ✅ Guardar en caché
+
+        // ✅ Guardar en caché (usuario Y permisos)
         if (typeof window !== 'undefined') {
           localStorage.setItem('cachedUser', JSON.stringify(userData));
           localStorage.setItem('lastAuthCheck', Date.now().toString());
+          // ✅ Guardar permisos en caché para usePermissions
+          localStorage.setItem('cached_permissions', JSON.stringify({
+            data: permissionsData,
+            timestamp: Date.now()
+          }));
         }
-        
+
         // ✅ Orden de prioridad para redirección
         const priorityPages = ['/dashboard', '/operaciones', '/consultas/entregas', '/vehiculos'];
         const redirectPage = priorityPages.find(page => allowedPages.includes(page)) || allowedPages[0] || '/dashboard';
-        
+
         router.push(redirectPage);
       } catch (permError) {
         console.error('Error obteniendo permisos:', permError);

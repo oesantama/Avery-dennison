@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, or_
 from datetime import date, datetime
-from zoneinfo import ZoneInfo
+import pytz
 from app.database import get_db
 from app.models.usuario import Usuario
 from app.models.operacion import OperacionDiaria, VehiculoOperacion
@@ -41,8 +41,8 @@ async def obtener_kpis(
     total_vehiculos = vehiculos_query.scalar() or 0
     total_entregas = entregas_query.scalar() or 0
 
-    # ✅ Today's date - usando zona horaria de Colombia
-    hoy = datetime.now(ZoneInfo("America/Bogota")).date()
+    # ✅ Today's date - usando zona horaria de Colombia (compatible Windows/pytz)
+    hoy = datetime.now(pytz.timezone("America/Bogota")).date()
 
     # ✅ Entregas by status - SOLO DEL DÍA DE HOY (no histórico)
     entregas_pendientes_query = db.query(func.count(Entrega.id)).filter(

@@ -88,7 +88,6 @@ export default function UsuariosPage() {
   // ✅ OPTIMIZACIÓN: Sincronizar roles cacheados con estado local
   useEffect(() => {
     if (rolesData) {
-      console.log('✅ Roles from cache:', rolesData);
       setRoles(rolesData);
     }
   }, [rolesData]);
@@ -97,13 +96,11 @@ export default function UsuariosPage() {
   useEffect(() => {
     const checkRoles = async () => {
       if (!rolesLoading && (!rolesData || rolesData.length === 0) && user) {
-        console.warn('⚠️ Cache failed, loading roles directly...');
         try {
           const directRoles = await rolesApi.list({ activo: true });
-          console.log('✅ Roles loaded directly:', directRoles);
           setRoles(directRoles);
         } catch (error) {
-          console.error('❌ Error loading roles:', error);
+          console.error('Error loading roles:', error);
           showToast('Error al cargar los roles', 'error');
         }
       }
@@ -164,10 +161,9 @@ export default function UsuariosPage() {
 
     try {
       setSaving(true);
-      const { password_confirm, ...dataToSubmit } = formData;
+      const { password_confirm, permisos, ...dataToSubmit } = formData;
 
-      // Incluir permisos personalizados
-      dataToSubmit.permisos = permisosUsuario;
+      let usuarioGuardado = false;
 
       if (editingId) {
         // Actualizar usuario
@@ -177,38 +173,59 @@ export default function UsuariosPage() {
         }
 
         await usuariosApi.update(editingId, updateData);
+        usuarioGuardado = true;
 
-        // Si hay permisos, actualizarlos
+        // Si hay permisos, actualizarlos (no falla si hay error)
         if (permisosUsuario.length > 0) {
-          await permisosUsuarioApi.createBulk(editingId, permisosUsuario);
+          try {
+            // Asegurar que los permisos tengan valores booleanos (no null/undefined)
+            const permisosLimpios = permisosUsuario.map((p) => ({
+              page_id: p.page_id,
+              puede_ver: p.puede_ver ?? false,
+              puede_crear: p.puede_crear ?? false,
+              puede_editar: p.puede_editar ?? false,
+              puede_borrar: p.puede_borrar ?? false
+            }));
+            await permisosUsuarioApi.createBulk(editingId, permisosLimpios);
+          } catch (permError) {
+            // Error al guardar permisos - no interrumpe el flujo
+          }
         }
 
         showToast('✅ Usuario actualizado exitosamente', 'success');
       } else {
         // Crear nuevo usuario
         const usuarioCreado = await usuariosApi.create(dataToSubmit);
+        usuarioGuardado = true;
 
-        // Crear permisos personalizados si se especificaron
+        // Crear permisos personalizados si se especificaron (no falla si hay error)
         if (permisosUsuario.length > 0) {
-          const permisosConUsuario = permisosUsuario.map((p) => ({
-            ...p,
-            usuario_id: usuarioCreado.id,
-          }));
-          await permisosUsuarioApi.createBulk(
-            usuarioCreado.id,
-            permisosConUsuario
-          );
+          try {
+            // Asegurar que los permisos tengan valores booleanos (no null/undefined)
+            const permisosLimpios = permisosUsuario.map((p) => ({
+              page_id: p.page_id,
+              puede_ver: p.puede_ver ?? false,
+              puede_crear: p.puede_crear ?? false,
+              puede_editar: p.puede_editar ?? false,
+              puede_borrar: p.puede_borrar ?? false
+            }));
+            await permisosUsuarioApi.createBulk(usuarioCreado.id, permisosLimpios);
+          } catch (permError) {
+            // Error al guardar permisos - no interrumpe el flujo
+          }
         }
 
         showToast('✅ Usuario creado exitosamente', 'success');
       }
 
-      setShowForm(false);
-      setEditingId(null);
-      resetForm();
-      loadData();
+      // Siempre cerrar modal y recargar si el usuario se guardó
+      if (usuarioGuardado) {
+        setShowForm(false);
+        setEditingId(null);
+        resetForm();
+        await loadData();
+      }
     } catch (error: any) {
-      console.error('Error saving usuario:', error);
       const message =
         error?.response?.data?.detail || 'Error al guardar el usuario';
       showToast(`❌ ${message}`, 'error');
@@ -234,12 +251,11 @@ export default function UsuariosPage() {
     try {
       const permisosData = await permisosUsuarioApi.getByUsuario(usuario.id);
       const permisosCreate = permisosData.map((p) => ({
-        usuario_id: usuario.id,
         page_id: p.page_id,
-        puede_ver: p.puede_ver,
-        puede_crear: p.puede_crear,
-        puede_editar: p.puede_editar,
-        puede_borrar: p.puede_borrar,
+        puede_ver: p.puede_ver ?? false,
+        puede_crear: p.puede_crear ?? false,
+        puede_editar: p.puede_editar ?? false,
+        puede_borrar: p.puede_borrar ?? false
       }));
       setPermisosUsuario(permisosCreate);
     } catch (error) {
@@ -356,8 +372,7 @@ export default function UsuariosPage() {
       key: 'rol_id',
       label: 'Rol',
       sortable: true,
-      render: (value, item) =>
-        (item as UsuarioConRol).rol?.nombre || getRolNombre(value as number),
+      render: (value, item) => (item as UsuarioConRol).rol?.nombre || getRolNombre(value as number),
     },
     {
       key: 'activo',
@@ -419,11 +434,6 @@ export default function UsuariosPage() {
             </h1>
             <p className="mt-2 text-sm text-gray-700">
               Administre los usuarios del sistema
-              {/* DEBUG INFO */}
-              <span className="ml-4 text-xs bg-yellow-100 px-2 py-1 rounded">
-                Roles cargados: {roles.length} | Cache:{' '}
-                {rolesLoading ? 'Loading...' : rolesData?.length || 0}
-              </span>
             </p>
           </div>
           <button
@@ -537,14 +547,11 @@ export default function UsuariosPage() {
                   {roles.length === 0 && (
                     <option disabled>No hay roles disponibles</option>
                   )}
-                  {roles.map((rol) => {
-                    console.log('🔍 Rol:', rol.id, rol.nombre);
-                    return (
-                      <option key={rol.id} value={rol.id}>
-                        {rol.nombre}
-                      </option>
-                    );
-                  })}
+                  {roles.map((rol) => (
+                    <option key={rol.id} value={rol.id}>
+                      {rol.nombre}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -652,49 +659,47 @@ export default function UsuariosPage() {
                       />
                       <button
                         type="button"
-                        onClick={() =>
-                          setShowPasswordConfirm(!showPasswordConfirm)
-                        }
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                    onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPasswordConfirm ? (
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        {showPasswordConfirm ? (
-                          <svg
-                            className="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                            />
-                          </svg>
-                        ) : (
-                          <svg
-                            className="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                            />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
                 </>
               )}
             </div>
