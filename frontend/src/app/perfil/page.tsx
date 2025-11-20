@@ -13,7 +13,7 @@ import SimpleLoader from '@/components/ui/SimpleLoader';
 export default function PerfilPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { showToast } = useToast();
+  const { showSuccess, showError } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -46,13 +46,10 @@ export default function PerfilPage() {
         email: formData.email,
         numero_celular: formData.numero_celular,
       });
-      showToast('Perfil actualizado exitosamente', 'success');
+      showSuccess('Perfil actualizado exitosamente');
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      showToast(
-        error.response?.data?.detail || 'Error al actualizar perfil',
-        'error'
-      );
+      showError(error.response?.data?.detail || 'Error al actualizar perfil');
     } finally {
       setLoading(false);
     }
@@ -64,12 +61,12 @@ export default function PerfilPage() {
 
     // Validaciones
     if (passwordData.new_password !== passwordData.confirm_password) {
-      showToast('Las contraseñas no coinciden', 'error');
+      showError('Las contraseñas no coinciden');
       return;
     }
 
     if (passwordData.new_password.length < 6) {
-      showToast('La contraseña debe tener al menos 6 caracteres', 'error');
+      showError('La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
@@ -79,7 +76,7 @@ export default function PerfilPage() {
         current_password: passwordData.current_password,
         new_password: passwordData.new_password,
       });
-      showToast('Contraseña actualizada exitosamente', 'success');
+      showSuccess('Contraseña actualizada exitosamente');
       setPasswordData({
         current_password: '',
         new_password: '',
@@ -87,9 +84,8 @@ export default function PerfilPage() {
       });
     } catch (error: any) {
       console.error('Error changing password:', error);
-      showToast(
-        error.response?.data?.detail || 'Error al cambiar contraseña',
-        'error'
+      showError(
+        error.response?.data?.detail || 'Error al cambiar contraseña'
       );
     } finally {
       setLoading(false);
