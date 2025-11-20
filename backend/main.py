@@ -42,7 +42,16 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+# Middleware para Private Network Access (CORS-RFC1918)
+@app.middleware("http")
+async def add_private_network_access_headers(request: Request, call_next):
+    response = await call_next(request)
+    # Headers para permitir acceso desde redes públicas a privadas
+    response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
 
 # Global exception handler to ensure CORS headers are always sent
 @app.exception_handler(Exception)

@@ -30,12 +30,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.windows
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:3035
+        NEXT_PUBLIC_API_URL: http://avery.millasiete.com:3035
     container_name: vehiculos-frontend
     ports:
       - '8036:8035'
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3035
+      NEXT_PUBLIC_API_URL: http://avery.millasiete.com:3035
       NODE_ENV: production
     depends_on:
       - backend
