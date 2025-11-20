@@ -5,7 +5,6 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pathlib import Path
 import logging
-import os
 import traceback
 from app.database import engine, Base
 from app.routes import auth, operaciones, entregas, dashboard, usuarios, rbac, vehiculos, tipos_vehiculo, permisos_rol, permisos_usuario
@@ -37,27 +36,13 @@ app = FastAPI(
 app.add_middleware(LoggingMiddleware)
 
 # CORS configuration
-default_allowed_origins = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:8035",
-    "http://localhost:8036",
-    "http://avery.millasiete.com",
-    "http://avery.millasiete.com:8036",
-    "http://avery.millasiete.com:3035",
-]
-
-extra_allowed = os.getenv("ALLOWED_ORIGINS", "")
-if extra_allowed:
-    default_allowed_origins.extend(
-        [origin.strip() for origin in extra_allowed.split(",") if origin.strip()]
-    )
-
-allowed_origins = sorted(set(default_allowed_origins))
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:8035",  # Frontend URL
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

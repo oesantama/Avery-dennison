@@ -6,6 +6,7 @@ class UsuarioBase(BaseModel):
     username: str
     nombre_completo: Optional[str] = None
     email: Optional[EmailStr] = None
+    numero_celular: Optional[str] = None
 
 class UsuarioCreate(UsuarioBase):
     password: str
@@ -18,6 +19,7 @@ class UsuarioResponse(UsuarioBase):
     id: int
     activo: bool
     fecha_creacion: datetime
+    numero_celular: Optional[str] = None
 
     class Config:
         from_attributes = True

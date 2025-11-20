@@ -11,16 +11,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/useToast';
 import { pagesApi } from '@/lib/api';
-import type { PageCreate, Page as PageType, PageUpdate } from '@/types';
+import type { Page as PageType, PageCreate, PageUpdate } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { FiEye, FiFileText } from 'react-icons/fi';
+import { FiEdit2, FiEye, FiFileText, FiPlus, FiTrash2 } from 'react-icons/fi';
 
 export default function PagesPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { hasPermission, canView, canCreate, canEdit, canDelete } =
-    usePermissions();
+  const { hasPermission, canView, canCreate, canEdit, canDelete } = usePermissions();
   const { toast, showToast, hideToast } = useToast();
 
   const [pages, setPages] = useState<PageType[]>([]);
@@ -202,9 +201,7 @@ export default function PagesPage() {
       key: 'icono',
       label: 'Icono',
       render: (value: unknown) => (
-        <span className="text-xs text-gray-500">
-          {(value as string) || '-'}
-        </span>
+        <span className="text-xs text-gray-500">{(value as string) || '-'}</span>
       ),
     },
     {
@@ -219,7 +216,9 @@ export default function PagesPage() {
       render: (value) => (
         <span
           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            value
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'
           }`}
         >
           {value ? 'Activo' : 'Inactivo'}
@@ -298,7 +297,11 @@ export default function PagesPage() {
         isOpen={showForm}
         onClose={handleCloseForm}
         title={
-          viewMode ? 'Ver Página' : editingId ? 'Editar Página' : 'Nueva Página'
+          viewMode
+            ? 'Ver Página'
+            : editingId
+            ? 'Editar Página'
+            : 'Nueva Página'
         }
         size="lg"
       >
@@ -403,7 +406,9 @@ export default function PagesPage() {
                 }
                 className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 disabled:cursor-not-allowed"
               />
-              <label className="ml-2 block text-sm text-gray-900">Activo</label>
+              <label className="ml-2 block text-sm text-gray-900">
+                Activo
+              </label>
             </div>
           </div>
 
@@ -468,7 +473,11 @@ export default function PagesPage() {
 
       {/* Toast */}
       {toast.show && (
-        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={hideToast}
+        />
       )}
     </DashboardLayout>
   );

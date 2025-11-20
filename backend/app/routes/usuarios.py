@@ -312,14 +312,14 @@ def cambiar_contrasena(
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
     # Verificar contraseña actual
-    if not verify_password(passwords.get("current_password", ""), db_usuario.hashed_password):
+    if not verify_password(passwords.get("current_password", ""), db_usuario.password_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Contraseña actual incorrecta"
         )
 
     # Actualizar contraseña
-    db_usuario.hashed_password = get_password_hash(passwords["new_password"])
+    db_usuario.password_hash = get_password_hash(passwords["new_password"])
     db.commit()
 
     return {

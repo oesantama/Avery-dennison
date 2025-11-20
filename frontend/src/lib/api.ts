@@ -35,27 +35,7 @@ import type {
 } from '@/types';
 import axios from 'axios';
 
-const inferBrowserApiUrl = () => {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  const { protocol, hostname, port } = window.location;
-
-  // Si ya estamos en el puerto del backend, usamos el origin completo
-  if (port === '3035') {
-    return window.location.origin;
-  }
-
-  return `${protocol}//${hostname}:3035`;
-};
-
-const envApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-const shouldIgnoreEnvApiUrl = envApiUrl?.includes('localhost');
-const API_URL =
-  !envApiUrl || shouldIgnoreEnvApiUrl
-    ? inferBrowserApiUrl() || 'http://localhost:3035'
-    : envApiUrl;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3035';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -107,19 +87,18 @@ export const authApi = {
     return response.data;
   },
 
-  getMyPermissions: async (): Promise<{
+  getMyPermissions: async (): Promise<{ 
     pages: string[];
-    permissions: Record<
-      string,
-      {
-        puede_ver: boolean;
-        puede_crear: boolean;
-        puede_editar: boolean;
-        puede_borrar: boolean;
-      }
-    >;
+    permissions: Record<string, {
+      puede_ver: boolean;
+      puede_crear: boolean;
+      puede_editar: boolean;
+      puede_borrar: boolean;
+    }>;
   }> => {
-    const response = await api.get('/api/auth/my-permissions');
+    const response = await api.get(
+      '/api/auth/my-permissions'
+    );
     return response.data;
   },
 
@@ -302,10 +281,7 @@ export const usuariosApi = {
     id: number,
     data: { current_password: string; new_password: string }
   ): Promise<{ message: string }> => {
-    const response = await api.post(
-      `/api/usuarios/${id}/change-password`,
-      data
-    );
+    const response = await api.post(`/api/usuarios/${id}/change-password`, data);
     return response.data;
   },
 };

@@ -63,7 +63,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const maestrosSubmenu = useMemo(
     () =>
       [
-        { name: 'Vehículos', href: '/vehiculos', icon: FiTool },
+        { name: 'Vehículos', href: '/maestros/vehiculos', icon: FiTool },
         {
           name: 'Tipos de Vehículo',
           href: '/maestros/tipos-vehiculo',

@@ -1,18 +1,18 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
-import SimpleLoader from '@/components/ui/SimpleLoader';
-import Toast from '@/components/ui/Toast';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/useToast';
 import { tiposVehiculoApi } from '@/lib/api';
 import type { TipoVehiculo, TipoVehiculoCreate } from '@/types';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { FiPlus, FiTool } from 'react-icons/fi';
+import Toast from '@/components/ui/Toast';
+import { useToast } from '@/hooks/useToast';
+import SimpleLoader from '@/components/ui/SimpleLoader';
 
 export default function TiposVehiculoPage() {
   const router = useRouter();
@@ -62,8 +62,7 @@ export default function TiposVehiculoPage() {
       loadTipos();
     } catch (error: any) {
       console.error('Error saving tipo:', error);
-      const message =
-        error?.response?.data?.detail || 'Error al guardar el tipo de vehículo';
+      const message = error?.response?.data?.detail || 'Error al guardar el tipo de vehículo';
       showToast(message, 'error');
     }
   };
@@ -137,9 +136,7 @@ export default function TiposVehiculoPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Tipos de Vehículo
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900">Tipos de Vehículo</h1>
             <p className="mt-2 text-sm text-gray-700">
               Administre los tipos de vehículos del sistema
             </p>
@@ -163,9 +160,7 @@ export default function TiposVehiculoPage() {
             setShowForm(false);
             resetForm();
           }}
-          title={
-            editingId ? 'Editar Tipo de Vehículo' : 'Nuevo Tipo de Vehículo'
-          }
+          title={editingId ? 'Editar Tipo de Vehículo' : 'Nuevo Tipo de Vehículo'}
           size="md"
         >
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -193,10 +188,7 @@ export default function TiposVehiculoPage() {
                 required
                 value={formData.estado}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    estado: e.target.value as 'activo' | 'inactivo',
-                  })
+                  setFormData({ ...formData, estado: e.target.value as 'activo' | 'inactivo' })
                 }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border text-gray-900"
               >
