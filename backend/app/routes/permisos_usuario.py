@@ -85,9 +85,11 @@ def create_bulk_permisos_usuario(
         )
 
     # ✅ ELIMINAR FÍSICAMENTE todos los permisos existentes del usuario
+
     db.query(PermisosUsuario).filter(
         PermisosUsuario.usuario_id == usuario_id
     ).delete(synchronize_session=False)
+    db.commit()  # Commit para asegurar que los registros viejos se eliminen antes de insertar los nuevos
 
     # ✅ Crear nuevos permisos desde cero
     nuevos_permisos = []
