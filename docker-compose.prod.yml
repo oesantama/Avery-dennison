@@ -1,0 +1,73 @@
+services:
+  # Base de datos
+  db:
+    image: postgres:15-alpine
+    container_name: vehiculos-db-prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-vehiculos_operacion}
+      TZ: America/Bogota
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    networks:
+      - vehiculos-prod-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vehiculos-backend-prod
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-vehiculos_operacion}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 43200
+      UPLOAD_DIR: uploads
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      TZ: America/Bogota
+    volumes:
+      - backend_uploads_prod:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - vehiculos-prod-network
+    ports:
+      - "3035:3035" # Coolify puede usar esto o red interna
+    restart: always
+
+  # Frontend Next.js
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL} # Importante para Coolify Build Argument
+    container_name: vehiculos-frontend-prod
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NODE_ENV=production
+      - TZ=America/Bogota
+    ports:
+      - "8035:8035"
+    depends_on:
+      - backend
+    networks:
+      - vehiculos-prod-network
+    restart: always
+
+networks:
+  vehiculos-prod-network:
+    driver: bridge
+
+volumes:
+  postgres_data_prod:
+  backend_uploads_prod:
