@@ -221,13 +221,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex h-20 flex-shrink-0 items-center justify-center px-4 border-b border-gray-200 bg-white">
               <div className="flex items-center gap-3 w-full">
                 <img
-                  src="/logo milla7.jpg"
+                  src="/logo-milla7.jpg"
                   alt="Milla7"
                   className="h-12 w-auto object-contain"
                 />
                 <div className="h-10 w-px bg-gray-200"></div>
                 <img
-                  src="/logo avery.jpg"
+                  src="/logo-avery.jpg"
                   alt="Avery Dennison"
                   className="h-12 w-auto object-contain"
                 />
@@ -395,13 +395,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex h-20 items-center justify-between px-4 border-b border-gray-200 bg-white">
               <div className="flex items-center gap-3 flex-1">
                 <img
-                  src="/logo milla7.jpg"
+                  src="/logo-milla7.jpg"
                   alt="Milla7"
                   className="h-10 w-auto object-contain"
                 />
                 <div className="h-8 w-px bg-gray-200"></div>
                 <img
-                  src="/logo avery.jpg"
+                  src="/logo-avery.jpg"
                   alt="Avery Dennison"
                   className="h-10 w-auto object-contain"
                 />
