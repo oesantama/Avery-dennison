@@ -64,6 +64,17 @@ services:
       - vehiculos-prod-network
     restart: always
 
+  # Database Viewer (Adminer)
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - vehiculos-prod-network
+    depends_on:
+      - db
+
 networks:
   vehiculos-prod-network:
     driver: bridge
