@@ -78,45 +78,58 @@ async def get_my_permissions(
     ✅ Si no es admin, consulta permisos del rol + permisos especiales del usuario.
     ✅ Retorna permisos detallados (puede_ver, puede_crear, puede_editar, puede_borrar).
     """
+    # ✅ Obtener permisos del ROL y ESPECIALES en menos consultas usando Joins
     from app.models.permisos import PermisosUsuario, PermisosRol
     from app.models.page import Page
-    from app.services.authorization import AuthorizationService
-
-
-    # ✅ Obtener permisos del ROL del usuario (incluido admin)
+    
     permisos_detallados = {}
 
+    # 1. Obtener todos los permisos del ROL con la información de la página en una sola consulta
     if current_user.rol_id:
-        permisos_rol = db.query(PermisosRol).filter(
-            PermisosRol.rol_id == current_user.rol_id
-        ).all()
-
-        for p in permisos_rol:
-            page = db.query(Page).filter(Page.id == p.page_id, Page.activo == True).first()
-            if page:
-                permisos_detallados[page.ruta] = {
-                    "puede_ver": p.puede_ver or False,
-                    "puede_crear": p.puede_crear or False,
-                    "puede_editar": p.puede_editar or False,
-                    "puede_borrar": p.puede_eliminar or False
-                }
-
-
-    # ✅ Obtener permisos especiales del usuario (sobrescriben permisos del rol)
-    permisos_usuario = db.query(PermisosUsuario).filter(
-        PermisosUsuario.usuario_id == current_user.id
-    ).all()
-
-    for p in permisos_usuario:
-        page = db.query(Page).filter(Page.id == p.page_id, Page.activo == True).first()
-        if page:
-            # Los permisos especiales del usuario sobrescriben los del rol
+        roles_con_paginas = (
+            db.query(PermisosRol, Page)
+            .join(Page, PermisosRol.page_id == Page.id)
+            .filter(PermisosRol.rol_id == current_user.rol_id, Page.activo == True)
+            .all()
+        )
+        
+        for p, page in roles_con_paginas:
             permisos_detallados[page.ruta] = {
-                "puede_ver": p.puede_ver if p.puede_ver is not None else permisos_detallados.get(page.ruta, {}).get("puede_ver", False),
-                "puede_crear": p.puede_crear if p.puede_crear is not None else permisos_detallados.get(page.ruta, {}).get("puede_crear", False),
-                "puede_editar": p.puede_editar if p.puede_editar is not None else permisos_detallados.get(page.ruta, {}).get("puede_editar", False),
-                "puede_borrar": p.puede_eliminar if p.puede_eliminar is not None else permisos_detallados.get(page.ruta, {}).get("puede_borrar", False)
+                "puede_ver": p.puede_ver or False,
+                "puede_crear": p.puede_crear or False,
+                "puede_editar": p.puede_editar or False,
+                "puede_borrar": p.puede_eliminar or False
             }
+
+    # 2. Obtener todos los permisos ESPECIALES del usuario con la información de la página
+    usuario_con_paginas = (
+        db.query(PermisosUsuario, Page)
+        .join(Page, PermisosUsuario.page_id == Page.id)
+        .filter(PermisosUsuario.usuario_id == current_user.id, Page.activo == True)
+        .all()
+    )
+
+    for p, page in usuario_con_paginas:
+        # Los permisos especiales del usuario sobrescriben los del rol si no son None
+        if page.ruta not in permisos_detallados:
+            permisos_detallados[page.ruta] = {
+                "puede_ver": False, "puede_crear": False, "puede_editar": False, "puede_borrar": False
+            }
+        
+        p_data = permisos_detallados[page.ruta]
+        if p.puede_ver is not None: p_data["puede_ver"] = p.puede_ver
+        if p.puede_crear is not None: p_data["puede_crear"] = p.puede_crear
+        if p.puede_editar is not None: p_data["puede_editar"] = p.puede_editar
+        if p.puede_eliminar is not None: p_data["puede_borrar"] = p.puede_eliminar
+
+    # ✅ SIEMPRE agregar /dashboard como permiso obligatorio
+    if "/dashboard" not in permisos_detallados:
+        permisos_detallados["/dashboard"] = {
+            "puede_ver": True,
+            "puede_crear": False,
+            "puede_editar": False,
+            "puede_borrar": False
+        }
 
     # ✅ SIEMPRE agregar /dashboard como permiso obligatorio
     if "/dashboard" not in permisos_detallados:
