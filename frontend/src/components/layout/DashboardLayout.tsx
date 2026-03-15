@@ -37,8 +37,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [checking, setChecking] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
   const [lastPathname, setLastPathname] = useState(pathname);
+  const [hasMounted, setHasMounted] = useState(false);
 
-  // ✅ TODOS LOS HOOKS DEBEN IR ANTES DE CUALQUIER RETURN
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  // TODOS LOS HOOKS DEBEN IR ANTES DE CUALQUIER RETURN
   // Memoize navigation arrays
   const navigation = useMemo(
     () =>
@@ -114,7 +119,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return crumbs;
   }, [pathname]);
 
-  // ✅ PROTECCIÓN DE RUTAS: Verificar permisos
+  // PROTECCION DE RUTAS: Verificar permisos
   useEffect(() => {
     // Esperar a que termine de cargar autenticación y permisos
     if (authLoading || permLoading) {
@@ -185,7 +190,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     router,
   ]);
 
-  // ✅ Detectar cambio de ruta para mostrar loading instantáneo
+  // Detectar cambio de ruta para mostrar loading instantaneo
   useEffect(() => {
     if (pathname !== lastPathname) {
       setIsNavigating(false);
@@ -201,14 +206,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   };
 
-  // ✅ Mostrar loading mientras se verifica (DESPUÉS de todos los hooks)
-  if (authLoading || permLoading || checking) {
-    return <PageLoader message="Verificando permisos..." />;
-  }
+  // El contenido principal se renderiza condicionalmente para evitar errores de hidratacion,
+  // pero la estructura base (div principal) debe mantenerse constante.
+  const renderContent = () => {
+    if (authLoading || permLoading || checking) {
+      return <PageLoader message="Verificando permisos..." />;
+    }
+    if (isNavigating) {
+      return <PageLoader message="Cargando página..." />;
+    }
+    return (
+      <main className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          {children}
+        </div>
+      </main>
+    );
+  };
 
-  // ✅ Mostrar loading durante navegación
-  if (isNavigating) {
-    return <PageLoader message="Cargando página..." />;
+  if (!hasMounted) {
+    return (
+      <div className="flex h-screen bg-white items-center justify-center">
+        <PageLoader message="Cargando..." />
+      </div>
+    );
   }
 
   return (
@@ -219,19 +240,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="flex min-h-0 flex-1 flex-col border-r border-gray-200 bg-white">
             {/* Logo Header con los dos logos empresariales */}
             <div className="flex h-20 flex-shrink-0 items-center justify-center px-4 border-b border-gray-200 bg-white">
-              <div className="flex items-center gap-3 w-full">
-                <img
-                  src="/logo milla7.jpg"
-                  alt="Milla7"
-                  className="h-12 w-auto object-contain"
-                />
-                <div className="h-10 w-px bg-gray-200"></div>
-                <img
-                  src="/logo avery.jpg"
-                  alt="Avery Dennison"
-                  className="h-12 w-auto object-contain"
-                />
-              </div>
+              <img
+                src="/logo-avery.jpg"
+                alt="Avery Dennison"
+                className="h-12 w-auto object-contain mx-auto"
+              />
             </div>
 
             {/* Navigation */}
@@ -392,18 +405,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Sidebar */}
           <div className="fixed inset-y-0 left-0 z-50 w-72 bg-white lg:hidden transform transition-transform duration-300 ease-in-out">
             {/* Header con logos y botón cerrar */}
-            <div className="flex h-20 items-center justify-between px-4 border-b border-gray-200 bg-white">
-              <div className="flex items-center gap-3 flex-1">
+            <div className="flex h-20 items-center justify-center px-4 border-b border-gray-200 bg-white">
+              <div className="flex items-center justify-center flex-1">
                 <img
-                  src="/logo milla7.jpg"
-                  alt="Milla7"
-                  className="h-10 w-auto object-contain"
-                />
-                <div className="h-8 w-px bg-gray-200"></div>
-                <img
-                  src="/logo avery.jpg"
+                  src="/logo-avery.jpg"
                   alt="Avery Dennison"
-                  className="h-10 w-auto object-contain"
+                  className="h-10 w-auto object-contain mx-auto"
                 />
               </div>
               <button
@@ -589,11 +596,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50">
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            {children}
-          </div>
-        </main>
+        {renderContent()}
       </div>
     </div>
   );

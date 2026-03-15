@@ -110,7 +110,7 @@ export default function LoginPage() {
           <div className="flex justify-center items-center gap-8 mb-6">
             <div className="flex-shrink-0">
               <img
-                src="/logo milla7.jpg"
+                src="/logo-milla7.jpg"
                 alt="Milla7"
                 className="h-16 w-auto object-contain"
               />
@@ -118,7 +118,7 @@ export default function LoginPage() {
             <div className="h-12 w-px bg-gray-300"></div>
             <div className="flex-shrink-0">
               <img
-                src="/logo avery.jpg"
+                src="/logo-avery.jpg"
                 alt="Avery Dennison"
                 className="h-16 w-auto object-contain"
               />

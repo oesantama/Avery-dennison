@@ -36,6 +36,7 @@ RUN adduser --system --uid 1001 nextjs
 # Utilizar standalone para un tamaño de imagen más pequeño
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 

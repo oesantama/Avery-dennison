@@ -1,0 +1,25 @@
+name: CD Production
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    # IMPORTANTE: Esto requiere que instales el agente en tu servidor Windows al grupo "self-hosted"
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        # Usamos git directo del sistema ya que el runner baja el código
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: Deploy Scripts (Docker)
+        # Simplemente ejecutamos el script de refresco que ya tenemos
+        run: |
+          powershell -ExecutionPolicy Bypass -File .\scripts\refresh-hybrid-stack.ps1 -HostIp 127.0.0.1
+        env:
+          # Aquí puedes inyectar secrets si los necesitamos en el futuro
+          DEPLOY_ENV: production

@@ -32,19 +32,20 @@ import type {
   VehiculoOperacion,
   VehiculoOperacionCreate,
   VehiculoUpdate,
-} from '@/types';
-import axios from 'axios';
+} from "@/types";
+import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3035';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3035";
 
 const api = axios.create({
   baseURL: API_URL,
+  timeout: 15000, // ✅ 15 segundos de timeout para evitar peticiones colgadas
 });
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -58,56 +59,57 @@ api.interceptors.response.use(
   (error) => {
     // Si es un error 401, el token es inválido o expiró
     if (error?.response?.status === 401) {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         const currentPath = window.location.pathname;
         // Solo redirigir si no estamos ya en login
-        if (currentPath !== '/login') {
-          console.log('Sesión expirada, redirigiendo al login');
-          localStorage.removeItem('token');
-          window.location.href = '/login';
+        if (currentPath !== "/login") {
+          console.log("Sesión expirada, redirigiendo al login");
+          localStorage.removeItem("token");
+          window.location.href = "/login";
         }
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Auth APIs
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<AuthToken> => {
     const formData = new FormData();
-    formData.append('username', credentials.username);
-    formData.append('password', credentials.password);
-    const response = await api.post<AuthToken>('/api/auth/login', formData);
+    formData.append("username", credentials.username);
+    formData.append("password", credentials.password);
+    const response = await api.post<AuthToken>("/api/auth/login", formData);
     return response.data;
   },
 
   me: async (): Promise<Usuario> => {
-    const response = await api.get<Usuario>('/api/auth/me');
+    const response = await api.get<Usuario>("/api/auth/me");
     return response.data;
   },
 
-  getMyPermissions: async (): Promise<{ 
+  getMyPermissions: async (): Promise<{
     pages: string[];
-    permissions: Record<string, {
-      puede_ver: boolean;
-      puede_crear: boolean;
-      puede_editar: boolean;
-      puede_borrar: boolean;
-    }>;
+    permissions: Record<
+      string,
+      {
+        puede_ver: boolean;
+        puede_crear: boolean;
+        puede_editar: boolean;
+        puede_borrar: boolean;
+      }
+    >;
   }> => {
-    const response = await api.get(
-      '/api/auth/my-permissions'
-    );
+    const response = await api.get("/api/auth/my-permissions");
     return response.data;
   },
 
   logout: async (): Promise<void> => {
     try {
-      await api.post('/api/auth/logout');
+      await api.post("/api/auth/logout");
     } catch (error) {
       // Ignorar errores de logout (el token se eliminará de todas formas)
-      console.warn('Error en logout del backend:', error);
+      console.warn("Error en logout del backend:", error);
     }
   },
 };
@@ -115,7 +117,7 @@ export const authApi = {
 // Operaciones APIs
 export const operacionesApi = {
   create: async (data: OperacionDiariaCreate): Promise<OperacionDiaria> => {
-    const response = await api.post<OperacionDiaria>('/api/operaciones/', data);
+    const response = await api.post<OperacionDiaria>("/api/operaciones/", data);
     return response.data;
   },
 
@@ -125,7 +127,7 @@ export const operacionesApi = {
     fecha_inicio?: string;
     fecha_fin?: string;
   }): Promise<OperacionDiaria[]> => {
-    const response = await api.get<OperacionDiaria[]>('/api/operaciones/', {
+    const response = await api.get<OperacionDiaria[]>("/api/operaciones/", {
       params,
     });
     return response.data;
@@ -137,25 +139,25 @@ export const operacionesApi = {
   },
 
   addVehiculo: async (
-    data: VehiculoOperacionCreate
+    data: VehiculoOperacionCreate,
   ): Promise<VehiculoOperacion> => {
     const response = await api.post<VehiculoOperacion>(
-      '/api/operaciones/vehiculos',
-      data
+      "/api/operaciones/vehiculos",
+      data,
     );
     return response.data;
   },
 
   listVehiculos: async (operacionId: number): Promise<VehiculoOperacion[]> => {
     const response = await api.get<VehiculoOperacion[]>(
-      `/api/operaciones/vehiculos/${operacionId}`
+      `/api/operaciones/vehiculos/${operacionId}`,
     );
     return response.data;
   },
 
   getVehiculo: async (vehiculoId: number): Promise<VehiculoOperacion> => {
     const response = await api.get<VehiculoOperacion>(
-      `/api/operaciones/vehiculo/${vehiculoId}`
+      `/api/operaciones/vehiculo/${vehiculoId}`,
     );
     return response.data;
   },
@@ -164,7 +166,7 @@ export const operacionesApi = {
 // Vehiculos APIs
 export const vehiculosApi = {
   create: async (data: VehiculoCreate): Promise<Vehiculo> => {
-    const response = await api.post<Vehiculo>('/api/vehiculos/', data);
+    const response = await api.post<Vehiculo>("/api/vehiculos/", data);
     return response.data;
   },
 
@@ -174,7 +176,7 @@ export const vehiculosApi = {
     activo?: boolean;
     estado?: string;
   }): Promise<Vehiculo[]> => {
-    const response = await api.get<Vehiculo[]>('/api/vehiculos/', { params });
+    const response = await api.get<Vehiculo[]>("/api/vehiculos/", { params });
     return response.data;
   },
 
@@ -197,8 +199,8 @@ export const vehiculosApi = {
 export const tiposVehiculoApi = {
   create: async (data: TipoVehiculoCreate): Promise<TipoVehiculo> => {
     const response = await api.post<TipoVehiculo>(
-      '/api/maestros/tipos-vehiculo/',
-      data
+      "/api/maestros/tipos-vehiculo/",
+      data,
     );
     return response.data;
   },
@@ -209,26 +211,26 @@ export const tiposVehiculoApi = {
     estado?: string;
   }): Promise<TipoVehiculo[]> => {
     const response = await api.get<TipoVehiculo[]>(
-      '/api/maestros/tipos-vehiculo/',
-      { params }
+      "/api/maestros/tipos-vehiculo/",
+      { params },
     );
     return response.data;
   },
 
   get: async (id: number): Promise<TipoVehiculo> => {
     const response = await api.get<TipoVehiculo>(
-      `/api/maestros/tipos-vehiculo/${id}`
+      `/api/maestros/tipos-vehiculo/${id}`,
     );
     return response.data;
   },
 
   update: async (
     id: number,
-    data: TipoVehiculoUpdate
+    data: TipoVehiculoUpdate,
   ): Promise<TipoVehiculo> => {
     const response = await api.put<TipoVehiculo>(
       `/api/maestros/tipos-vehiculo/${id}`,
-      data
+      data,
     );
     return response.data;
   },
@@ -241,7 +243,7 @@ export const tiposVehiculoApi = {
 // Usuarios APIs
 export const usuariosApi = {
   create: async (data: UsuarioCreate): Promise<Usuario> => {
-    const response = await api.post<Usuario>('/api/usuarios', data);
+    const response = await api.post<Usuario>("/api/usuarios", data);
     return response.data;
   },
 
@@ -250,7 +252,7 @@ export const usuariosApi = {
     limit?: number;
     activo?: boolean;
   }): Promise<UsuarioConRol[]> => {
-    const response = await api.get<UsuarioConRol[]>('/api/usuarios', {
+    const response = await api.get<UsuarioConRol[]>("/api/usuarios", {
       params,
     });
     return response.data;
@@ -271,7 +273,7 @@ export const usuariosApi = {
   },
 
   desbloquear: async (
-    id: number
+    id: number,
   ): Promise<{ message: string; usuario_id: number }> => {
     const response = await api.post(`/api/usuarios/${id}/desbloquear`);
     return response.data;
@@ -279,9 +281,12 @@ export const usuariosApi = {
 
   changePassword: async (
     id: number,
-    data: { current_password: string; new_password: string }
+    data: { current_password: string; new_password: string },
   ): Promise<{ message: string }> => {
-    const response = await api.post(`/api/usuarios/${id}/change-password`, data);
+    const response = await api.post(
+      `/api/usuarios/${id}/change-password`,
+      data,
+    );
     return response.data;
   },
 };
@@ -289,7 +294,7 @@ export const usuariosApi = {
 // Roles APIs
 export const rolesApi = {
   create: async (data: RolCreate): Promise<Rol> => {
-    const response = await api.post<Rol>('/api/roles', data);
+    const response = await api.post<Rol>("/api/roles", data);
     return response.data;
   },
 
@@ -298,7 +303,7 @@ export const rolesApi = {
     limit?: number;
     activo?: boolean;
   }): Promise<Rol[]> => {
-    const response = await api.get<Rol[]>('/api/roles', { params });
+    const response = await api.get<Rol[]>("/api/roles", { params });
     return response.data;
   },
 
@@ -320,7 +325,7 @@ export const rolesApi = {
 // Pages APIs
 export const pagesApi = {
   create: async (data: PageCreate): Promise<Page> => {
-    const response = await api.post<Page>('/api/pages', data);
+    const response = await api.post<Page>("/api/pages", data);
     return response.data;
   },
 
@@ -329,7 +334,7 @@ export const pagesApi = {
     limit?: number;
     activo?: boolean;
   }): Promise<Page[]> => {
-    const response = await api.get<Page[]>('/api/pages', { params });
+    const response = await api.get<Page[]>("/api/pages", { params });
     return response.data;
   },
 
@@ -351,7 +356,7 @@ export const pagesApi = {
 // Permisos por Rol APIs
 export const permisosRolApi = {
   create: async (data: PermisoRolCreate): Promise<PermisoRol> => {
-    const response = await api.post<PermisoRol>('/api/permisos-rol', data);
+    const response = await api.post<PermisoRol>("/api/permisos-rol", data);
     return response.data;
   },
 
@@ -362,7 +367,7 @@ export const permisosRolApi = {
     page_id?: number;
     estado?: string;
   }): Promise<PermisoRol[]> => {
-    const response = await api.get<PermisoRol[]>('/api/permisos-rol', {
+    const response = await api.get<PermisoRol[]>("/api/permisos-rol", {
       params,
     });
     return response.data;
@@ -386,7 +391,7 @@ export const permisosRolApi = {
 // Entregas APIs
 export const entregasApi = {
   create: async (data: EntregaCreate): Promise<Entrega> => {
-    const response = await api.post<Entrega>('/api/entregas/', data);
+    const response = await api.post<Entrega>("/api/entregas/", data);
     return response.data;
   },
 
@@ -396,7 +401,7 @@ export const entregasApi = {
     vehiculo_operacion_id?: number;
     estado?: string;
   }): Promise<Entrega[]> => {
-    const response = await api.get<Entrega[]>('/api/entregas/', { params });
+    const response = await api.get<Entrega[]>("/api/entregas/", { params });
     return response.data;
   },
 
@@ -412,20 +417,20 @@ export const entregasApi = {
 
   uploadPhoto: async (entregaId: number, file: File): Promise<void> => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
     await api.post(`/api/entregas/${entregaId}/fotos`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
   },
 
   uploadFoto: async (entregaId: number, file: File): Promise<void> => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
     await api.post(`/api/entregas/${entregaId}/fotos`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
   },
@@ -437,14 +442,14 @@ export const dashboardApi = {
     fecha_inicio?: string;
     fecha_fin?: string;
   }): Promise<DashboardKPIs> => {
-    const response = await api.get<DashboardKPIs>('/api/dashboard/kpis', {
+    const response = await api.get<DashboardKPIs>("/api/dashboard/kpis", {
       params,
     });
     return response.data;
   },
 
   searchEntregas: async (filters: DashboardFilters): Promise<Entrega[]> => {
-    const response = await api.get<Entrega[]>('/api/dashboard/entregas', {
+    const response = await api.get<Entrega[]>("/api/dashboard/entregas", {
       params: filters,
     });
     return response.data;
@@ -456,7 +461,7 @@ export const permisosUsuarioApi = {
   // Obtener permisos de un usuario específico
   getByUsuario: async (usuarioId: number): Promise<PermisoUsuario[]> => {
     const response = await api.get<PermisoUsuario[]>(
-      `/api/permisos-usuario/usuario/${usuarioId}`
+      `/api/permisos-usuario/usuario/${usuarioId}`,
     );
     return response.data;
   },
@@ -464,8 +469,8 @@ export const permisosUsuarioApi = {
   // Crear permiso para usuario
   create: async (data: PermisoUsuarioCreate): Promise<PermisoUsuario> => {
     const response = await api.post<PermisoUsuario>(
-      '/api/permisos-usuario',
-      data
+      "/api/permisos-usuario",
+      data,
     );
     return response.data;
   },
@@ -473,11 +478,11 @@ export const permisosUsuarioApi = {
   // Crear múltiples permisos para un usuario (bulk)
   createBulk: async (
     usuarioId: number,
-    permisos: PermisoUsuarioCreate[]
+    permisos: PermisoUsuarioCreate[],
   ): Promise<PermisoUsuario[]> => {
     const response = await api.post<PermisoUsuario[]>(
       `/api/permisos-usuario/usuario/${usuarioId}/bulk`,
-      permisos
+      permisos,
     );
     return response.data;
   },
@@ -485,11 +490,11 @@ export const permisosUsuarioApi = {
   // Actualizar permiso de usuario
   update: async (
     id: number,
-    data: PermisoUsuarioUpdate
+    data: PermisoUsuarioUpdate,
   ): Promise<PermisoUsuario> => {
     const response = await api.put<PermisoUsuario>(
       `/api/permisos-usuario/${id}`,
-      data
+      data,
     );
     return response.data;
   },
@@ -502,7 +507,7 @@ export const permisosUsuarioApi = {
   // Sincronizar permisos de usuario con los del rol
   syncWithRol: async (usuarioId: number): Promise<PermisoUsuario[]> => {
     const response = await api.post<PermisoUsuario[]>(
-      `/api/permisos-usuario/usuario/${usuarioId}/sync-rol`
+      `/api/permisos-usuario/usuario/${usuarioId}/sync-rol`,
     );
     return response.data;
   },
